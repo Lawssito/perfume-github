@@ -115,24 +115,12 @@ Con Maven:
 mvn clean install
 ```
 
-Con Gradle:
-
-```bash
-./gradlew clean build
-```
-
 ### 3) Levantar la aplicacion
 
 Con Maven:
 
 ```bash
 mvn spring-boot:run
-```
-
-Con Gradle:
-
-```bash
-./gradlew bootRun
 ```
 
 La API quedara disponible en:
@@ -196,12 +184,6 @@ Con Maven:
 
 ```bash
 mvn test
-```
-
-Con Gradle:
-
-```bash
-./gradlew test
 ```
 
 ## Despliegue
