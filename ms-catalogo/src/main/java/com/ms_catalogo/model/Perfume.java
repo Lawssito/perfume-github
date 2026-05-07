@@ -1,31 +1,41 @@
 package com.ms_catalogo.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "perfumes")
+@Data // Lombok: genera getters, setters, toString, equals y hashCode
+@NoArgsConstructor
+@AllArgsConstructor
 public class Perfume {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Perfumeid;
+    private Long id;
 
+    @Column(nullable = false)
     private String nombre;
+
+    @Column(nullable = false)
     private String marca;
+
+    @Column(nullable = false)
     private Integer ml;
-    private Double precio;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal precio; // BigDecimal es la mejor práctica para dinero
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Concentracion concentracion;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Genero genero;
 
     @Column(length = 500)
