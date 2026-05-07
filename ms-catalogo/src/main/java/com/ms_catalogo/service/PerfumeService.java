@@ -35,7 +35,6 @@ public class PerfumeService {
         return mapToDTO(guardado);
     }
 
-    // Funciones utilitarias para mapear (podrías usar MapStruct en proyectos grandes)
     private PerfumeDto mapToDTO(Perfume p) {
         return new PerfumeDto(p.getId(), p.getNombre(), p.getMarca(), p.getMl(), p.getPrecio(), p.getConcentracion(), p.getGenero(), p.getDescripcion());
     }
