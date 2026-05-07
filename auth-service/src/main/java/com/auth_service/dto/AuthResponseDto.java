@@ -1,5 +1,6 @@
 package com.auth_service.dto;
 
-public record AuthResponseDto() {
-
-}
+public record AuthResponseDto(
+    
+    String token
+) {}

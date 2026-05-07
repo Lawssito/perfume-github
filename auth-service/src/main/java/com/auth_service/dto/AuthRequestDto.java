@@ -1,5 +1,7 @@
 package com.auth_service.dto;
 
-public record AuthRequestDto() {
+public record AuthRequestDto(
+    String username,
+    String password) {
 
 }
