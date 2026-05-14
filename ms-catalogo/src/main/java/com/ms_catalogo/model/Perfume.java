@@ -1,43 +1,43 @@
 package com.ms_catalogo.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
+import lombok.*;
+import java.util.List;
 
 @Entity
 @Table(name = "perfumes")
-@Data // Lombok: genera getters, setters, toString, equals y hashCode
-@NoArgsConstructor
-@AllArgsConstructor
-public class Perfume {
+@Getter 
+@Setter 
+@NoArgsConstructor 
+@AllArgsConstructor 
+@Builder
 
+    public class Perfume {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long idPerfume;
+
+    @ManyToOne
+    @JoinColumn(name = "id_categoria", nullable = false)
+    private Categoria categoria;
+
+    @ManyToOne
+    @JoinColumn(name = "id_marca", nullable = false)
+    private Marca marca;
+
+    @Column(nullable = false)
+    private String concentracion; // EDP, EDT, Parfum
 
     @Column(nullable = false)
     private String nombre;
 
-    @Column(nullable = false)
-    private String marca;
-
-    @Column(nullable = false)
-    private Integer ml;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal precio; // BigDecimal es la mejor práctica para dinero
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Concentracion concentracion;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Genero genero;
-
     @Column(length = 500)
     private String descripcion;
+
+    @Column(nullable = false)
+    private String estado; // ACTIVO, DESCONTINUADO
+
+    // mappedBy apunta al nombre del atributo en la clase Variante
+    @OneToMany(mappedBy = "perfume", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Variante> variantes;
 }
