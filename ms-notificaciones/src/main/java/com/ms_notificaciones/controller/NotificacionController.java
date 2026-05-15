@@ -20,18 +20,18 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class NotificacionController {
 
+// Cambiado para coincidir con tu nombre de clase en español
     private final NotificacionService notificacionService;
 
-    // Endpoint para que otros microservicios avisen de un evento
-    @PostMapping("/eventos")
-    public ResponseEntity<Notificacion> recibirEvento(@Valid @RequestBody EventoNotificacionDTO eventoDTO) {
-        log.info("Recibida peticion POST (Evento) en ms-notificaciones: {}", eventoDTO);
+    @PostMapping("/enviar")
+    public ResponseEntity<Notificacion> enviarNotificacion(@Valid @RequestBody EventoNotificacionDTO eventoDTO) {
+        // Ajustado para usar getIdUsuario() según tu Service
+        log.info("Petición POST recibida en /api/notificaciones/enviar para el usuario ID: {}", eventoDTO.getIdUsuario());
         
-        Notificacion resultado = notificacionService.procesarEventoYEnviar(eventoDTO);
+        // Ajustado para usar el método exacto que definiste en la línea 21 de tu captura
+        Notificacion notificacionGuardada = notificacionService.procesarEventoYEnviar(eventoDTO);
         
-        log.info("Evento procesado y notificación finalizada con ID: {} - Estado: {}", 
-                 resultado.getIdNotificacion(), resultado.getEstadoEnvio());
-                 
-        return ResponseEntity.ok(resultado);
+        log.info("Notificación procesada y guardada con éxito. ID: {}", notificacionGuardada.getIdNotificacion());
+        return ResponseEntity.ok(notificacionGuardada);
     }
 }
