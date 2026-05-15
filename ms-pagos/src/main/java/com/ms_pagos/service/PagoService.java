@@ -1,17 +1,16 @@
 package com.ms_pagos.service;
 
-import com.ms_pagos.dto.ActualizarEstadoDTO;
-import com.ms_pagos.dto.CrearPagoDTO;
-import com.ms_pagos.dto.PagoDTO;
-import com.ms_pagos.model.EstadoPago;
-import com.ms_pagos.model.Pago;
-import com.ms_pagos.repository.PagoRespository;
-import com.ms_pagos.exception.PagoNotFoundException;
-import com.ms_pagos.exception.TransicionEstadoInvalidaException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ms_pagos.dto.CrearPagoDTO;
+import com.ms_pagos.dto.PagoDTO;
+import com.ms_pagos.exception.PagoNotFoundException;
+import com.ms_pagos.exception.TransicionEstadoInvalidaException;
+import com.ms_pagos.model.EstadoPago;
+import com.ms_pagos.model.Pago;
+import com.ms_pagos.repository.PagoRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,17 +20,15 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class PagoService {
-
-    private final PagoRespository pagoRespository;
+    
+    private final PagoRepository pagoRepository;
 
     @Transactional
     public PagoDTO crearPago(CrearPagoDTO dto) {
         log.info("[SERVICE] Creando pago para pedido ID: {} | Monto: {} | Metodo: {}",
                 dto.getIdPedido(), dto.getMontoTotal(), dto.getMetodoPago());
-
         try {
-            // Verificar que no exista ya un pago para este pedido
-            if (pagoRespository.findByIdPedido(dto.getIdPedido()).isPresent()) {
+            if (pagoRepository.findByIdPedido(dto.getIdPedido()).isPresent()) {
                 log.warn("[SERVICE] Ya existe un pago para el pedido ID: {}", dto.getIdPedido());
                 throw new IllegalStateException(
                     "Ya existe un pago registrado para el pedido " + dto.getIdPedido()
@@ -42,12 +39,10 @@ public class PagoService {
             pago.setIdPedido(dto.getIdPedido());
             pago.setMontoTotal(dto.getMontoTotal());
             pago.setMetodoPago(dto.getMetodoPago());
-            // estado y creadoEn los asigna @PrePersist automáticamente
 
-            // Referencia externa simulada — en producción vendría de Stripe/MercadoPago
             pago.setReferenciaExterna("REF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 
-            Pago guardado = pagoRespository.save(pago);
+            Pago guardado = pagoRepository.save(pago);
 
             log.info("[SERVICE] Pago creado exitosamente. ID: {} | Referencia: {} | Estado: {}",
                     guardado.getIdTransaccion(), guardado.getReferenciaExterna(), guardado.getEstado());
@@ -57,7 +52,6 @@ public class PagoService {
         } catch (IllegalStateException e) {
             log.warn("[SERVICE] Intento de crear pago duplicado para pedido {}", dto.getIdPedido());
             throw e;
-
         } catch (Exception e) {
             log.error("[SERVICE] Error inesperado al crear pago para pedido {}: {}",
                     dto.getIdPedido(), e.getMessage(), e);
@@ -70,7 +64,7 @@ public class PagoService {
         log.info("[SERVICE] Procesando pago ID: {}", idTransaccion);
 
         try {
-            Pago pago = pagoRespository.findById(idTransaccion)
+            Pago pago = pagoRepository.findById(idTransaccion)
                     .orElseThrow(() -> new PagoNotFoundException(idTransaccion));
 
             // Solo se pueden procesar pagos PENDIENTES
@@ -89,7 +83,7 @@ public class PagoService {
             pago.setEstado(nuevoEstado);
             pago.setProcesadoEn(LocalDateTime.now());
 
-            Pago actualizado = pagoRespository.save(pago);
+            Pago actualizado = pagoRepository.save(pago);
 
             log.info("[SERVICE] Pago {} procesado. Resultado: {} | Procesado en: {}",
                     idTransaccion, nuevoEstado, actualizado.getProcesadoEn());
@@ -111,7 +105,7 @@ public class PagoService {
         log.info("[SERVICE] Anulando pago ID: {}", idTransaccion);
 
         try {
-            Pago pago = pagoRespository.findById(idTransaccion)
+            Pago pago = pagoRepository.findById(idTransaccion)
                     .orElseThrow(() -> new PagoNotFoundException(idTransaccion));
 
             if (pago.getEstado() != EstadoPago.PENDIENTE) {
@@ -125,7 +119,7 @@ public class PagoService {
             pago.setEstado(EstadoPago.ANULADO);
             pago.setProcesadoEn(LocalDateTime.now());
 
-            Pago actualizado = pagoRespository.save(pago);
+            Pago actualizado = pagoRepository.save(pago);
 
             log.info("[SERVICE] Pago {} anulado exitosamente", idTransaccion);
 
@@ -145,7 +139,7 @@ public class PagoService {
         log.info("[SERVICE] Consultando pago ID: {}", idTransaccion);
 
         try {
-            Pago pago = pagoRespository.findById(idTransaccion)
+            Pago pago = pagoRepository.findById(idTransaccion)
                     .orElseThrow(() -> new PagoNotFoundException(idTransaccion));
 
             log.info("[SERVICE] Pago encontrado. ID: {} | Estado: {} | Pedido: {}",
@@ -164,11 +158,12 @@ public class PagoService {
         }
     }
 
+
     public PagoDTO consultarPorPedido(Long idPedido) {
         log.info("[SERVICE] Consultando pago del pedido ID: {}", idPedido);
 
         try {
-            Pago pago = pagoRespository.findByIdPedido(idPedido)
+            Pago pago = pagoRepository.findByIdPedido(idPedido)
                     .orElseThrow(() -> new PagoNotFoundException(idPedido));
 
             log.info("[SERVICE] Pago encontrado para pedido {}. Estado: {}",
@@ -191,7 +186,7 @@ public class PagoService {
         log.info("[SERVICE] Listando todos los pagos");
 
         try {
-            List<Pago> pagos = pagoRespository.findAll();
+            List<Pago> pagos = pagoRepository.findAll();
             log.info("[SERVICE] Total de pagos encontrados: {}", pagos.size());
             return pagos.stream().map(this::mapToDTO).toList();
 

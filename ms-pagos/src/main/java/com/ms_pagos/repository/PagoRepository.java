@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.ms_pagos.model.Pago;
 
 @Repository
-public interface PagoRespository extends JpaRepository<Pago, Long> {
+public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     Optional<Pago> findByIdPedido(Long idPedido);
 
