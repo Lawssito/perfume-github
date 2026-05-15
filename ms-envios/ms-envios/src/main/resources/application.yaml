@@ -1,0 +1,26 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: ms-envios
+
+  datasource:
+    url: jdbc:mysql://localhost:3307/db_envios?createDatabaseIfNotExist=true
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+      dialect: org.hibernate.dialect.MySQLDialect
+      format_sql: true
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
