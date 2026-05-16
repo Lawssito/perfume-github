@@ -1,16 +1,24 @@
 package com.ms_catalogo.controller;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.ms_catalogo.dto.PerfumeDTO;
 import com.ms_catalogo.dto.VarianteDTO;
 import com.ms_catalogo.model.Perfume;
 import com.ms_catalogo.model.Variante;
 import com.ms_catalogo.service.CatalogoService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -20,7 +28,7 @@ public class CatalogoController {
 
     private final CatalogoService catalogoService;
 
-    @GetMapping
+    @GetMapping("/productos")
     public ResponseEntity<List<Perfume>> obtenerCatalogo() {
         log.info("Petición GET recibida para listar el catálogo");
         return ResponseEntity.ok(catalogoService.listarCatalogoCompleto());
