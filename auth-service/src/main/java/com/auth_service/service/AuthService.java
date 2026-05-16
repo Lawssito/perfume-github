@@ -1,14 +1,15 @@
 package com.auth_service.service;
 
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-// import org.springframework.security.crypto.password.PasswordEncoder; // Necesitarás Spring Security
 import org.springframework.stereotype.Service;
+
 import com.auth_service.dto.AuthResponseDTO;
 import com.auth_service.dto.LoginRequestDTO;
+import com.auth_service.model.Credencial;
 import com.auth_service.repository.CredencialRepository;
-import com.auth_service.model.*;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -21,10 +22,10 @@ public class AuthService {
         log.info("Iniciando intento de login para el email: {}", request.getEmail());
 
         // 1. Buscar la credencial por email
-        Credencial credencial = credencialRepository.findByEmailLogin(request.getEmail())
+            Credencial credencial = credencialRepository.findByEmailLogin(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Login fallido: Usuario no encontrado para el email {}", request.getEmail());
-                    return new RuntimeException("Credenciales inválidas");
+                    throw new RuntimeException("Credenciales inválidas"); // <-- CORREGIDO: Se usa throw, no return
                 });
 
         // 2. Validar estado de la cuenta

@@ -1,14 +1,19 @@
 package com.auth_service.controller;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.auth_service.client.UserServiceClient;
 import com.auth_service.dto.AuthResponseDTO;
 import com.auth_service.dto.LoginRequestDTO;
 import com.auth_service.service.AuthService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -28,7 +33,7 @@ public class AuthController {
         // EJEMPLO DE FEIGN: Consultando el user-service después de un login exitoso (Opcional, pero genial para la defensa)
         log.info("Consultando user-service para verificar estado del perfil del usuario ID: {}", respuesta.getIdUsuario());
         try {
-            Object perfil = userServiceClient.obtenerPerfilUsuario(respuesta.getIdUsuario());
+            userServiceClient.obtenerPerfilUsuario(respuesta.getIdUsuario());
             log.info("Perfil recuperado exitosamente desde user-service");
         } catch (Exception e) {
             log.warn("No se pudo contactar al user-service, pero el login procedió. Error: {}", e.getMessage());
