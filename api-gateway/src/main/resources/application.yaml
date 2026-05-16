@@ -4,12 +4,76 @@ server:
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
+          lower-case-service-id: true
+
         routes:
+        # -- user-service --
+        - id: user-service
+          # lb:// → load balancer → busca el servicio en Eureka por nombre
+          uri: lb://user-service
+          predicates:
+            - Path=/api/usuarios/**
+
+        # -- auth-service --
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+
+        # -- security-service --
+        - id: security-service
+          uri: lb://security-service
+          predicates:
+            - Path=/api/roles/**
+
+        # -- ms-catalogo --
+        - id: ms-catalogo
+          uri: lb://ms-catalogo
+          predicates:
+            - Path=/api/catalogo/**
+
+        # -- ms-stock --
+        - id: ms-stock
+          uri: lb://ms-stock
+          predicates:
+            - Path=/api/stock/**
+
+        # -- ms-carrito --
+        - id: ms-carrito
+          uri: lb://ms-carrito
+          predicates:
+            - Path=/api/carrito/**
+
+        # -- ms-pedidos --
+        - id: ms-pedidos
+          uri: lb://ms-pedidos
+          predicates:
+            - Path=/api/pedidos/**
+
+        # -- ms-pagos --
+        - id: ms-pagos
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/api/pagos/**
+
+        # -- ms-envios --
+        - id: ms-envios
+          uri: lb://ms-envios
+          predicates:
+            - Path=/api/envios/**
+
+        # -- ms-notificaciones --
+        - id: ms-notificaciones
+          uri: lb://ms-notificaciones
+          predicates:
+            - Path=/api/notificaciones/**
+
 
 eureka:
   client:
@@ -17,3 +81,5 @@ eureka:
       defaultZone: http://localhost:8761/eureka
     fetch-registry: true
     register-with-eureka: true
+  instance:
+    prefer-ip-address: true
