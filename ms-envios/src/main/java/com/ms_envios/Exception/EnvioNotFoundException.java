@@ -1,4 +1,4 @@
-package com.ms_envios.Exception;
+package com.ms_envios.exception;
 
 public class EnvioNotFoundException extends RuntimeException{
     public EnvioNotFoundException(Long id) {

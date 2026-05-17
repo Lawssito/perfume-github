@@ -1,4 +1,4 @@
-package com.ms_envios.Exception;
+package com.ms_envios.exception;
 
 import com.ms_envios.model.EstadoEnvio;
 
