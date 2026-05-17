@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "ms-stock", url = "http://localhost:8081/api/stock")
+@FeignClient(name = "ms-stock")
 public interface StockClient {
 
     @GetMapping("/api/stock/{idVariante}")

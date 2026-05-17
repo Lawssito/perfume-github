@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.ms_pedidos.client.dto.CrearPagoClientDTO;
 import com.ms_pedidos.client.dto.PagoDTO;
 
-@FeignClient(name = "ms-pagos", url = "http://localhost:8085/api/pagos")
+@FeignClient(name = "ms-pagos")
 public interface PagoClient {
 
     @PostMapping("/api/pagos")

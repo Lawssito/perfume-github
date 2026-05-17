@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "ms-envios", url = "http://localhost:8087/api/envios")
+@FeignClient(name = "ms-envios")
 public interface EnvioClient {
 
     @PostMapping("/api/envios")

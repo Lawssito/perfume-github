@@ -27,13 +27,5 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-ms-carrito:
-  url: http://localhost:8083/api/carrito
-ms-stock:
-  url: http://localhost:8081/api/stock
-ms-pagos:
-  url: http://localhost:8085/api/pagos
-ms-envios:
-  url: http://localhost:8087/api/envios
-ms-notificaciones:
-  url: http://localhost:8090/api/notificacion
+  instance:
+    prefer-ip-address: true
