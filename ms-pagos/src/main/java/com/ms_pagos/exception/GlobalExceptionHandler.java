@@ -86,7 +86,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "INVALID_STATE", ex.getMessage(), request);
     }
 
-    // ── Argumento inválido ──
+    // ── Error inesperado ──
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenerico(
             Exception ex,
