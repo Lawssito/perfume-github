@@ -1,7 +1,5 @@
 package com.user_service.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,21 +9,25 @@ import com.user_service.model.Direccion;
 import com.user_service.model.Usuario;
 import com.user_service.repository.UsuarioRepository;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UsuarioService {
+public class UsuarioServiceImpl implements IUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
 
     @Transactional
+    @Override
     public Usuario crearUsuario(usuarioDTO dto) {
         log.info("Iniciando lógica de negocio para crear usuario con email: {}", dto.getEmail());
         
         // Validación de negocio (ej: email no repetido)
         if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {
             log.error("El email {} ya se encuentra registrado", dto.getEmail());
-            throw new IllegalArgumentException("Email ya registrado");
+            throw new IllegalArgumentException("Email ya registrado: " + dto.getEmail());
         }
 
         Usuario usuario = Usuario.builder()
@@ -40,6 +42,7 @@ public class UsuarioService {
         return guardado;
     }
 
+    @Override
     @Transactional
     public Direccion agregarDireccion(Long idUsuario, direccionDTO dto) {
         log.info("Iniciando proceso para agregar dirección al usuario ID: {}", idUsuario);
@@ -47,7 +50,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> {
                     log.error("Usuario con ID {} no encontrado", idUsuario);
-                    return new RuntimeException("Usuario no encontrado");
+                    return new IllegalArgumentException("Usuario no encontrado con ID: " + idUsuario);
                 });
 
         Direccion direccion = Direccion.builder()
@@ -60,7 +63,7 @@ public class UsuarioService {
                 .build();
 
         usuario.getDirecciones().add(direccion);
-        usuarioRepository.save(usuario); // Guarda en cascada
+        usuarioRepository.save(usuario);
         
         log.info("Dirección agregada exitosamente al usuario ID: {}", idUsuario);
         return direccion;

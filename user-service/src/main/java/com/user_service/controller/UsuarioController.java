@@ -12,7 +12,7 @@ import com.user_service.dto.direccionDTO;
 import com.user_service.dto.usuarioDTO;
 import com.user_service.model.Direccion;
 import com.user_service.model.Usuario;
-import com.user_service.service.UsuarioService;
+import com.user_service.service.IUsuarioService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class UsuarioController {
 
-    private final UsuarioService usuarioService;
+    private final IUsuarioService usuarioService;
 
     @PostMapping
     public ResponseEntity<Usuario> crear(@Valid @RequestBody usuarioDTO dto) {
