@@ -1,7 +1,9 @@
 package com.ms_carrito.service;
 
+import com.ms_carrito.client.CatalogoClient;
 import com.ms_carrito.client.StockClient;
 import com.ms_carrito.client.StockResponseDTO;
+import com.ms_carrito.client.VarianteResponseDTO;
 import com.ms_carrito.dto.*;
 import com.ms_carrito.model.Carrito;
 import com.ms_carrito.model.ItemCarrito;
@@ -24,6 +26,7 @@ public class CarritoService {
     private final CarritoRepository     carritoRepository;
     private final ItemCarritoRepository itemCarritoRepository;
     private final StockClient           stockClient;
+    private final CatalogoClient        catalogoClient;
 
     // ─────────────────────────────────────────────────────────
     // HELPER — verificar stock con Feign
@@ -55,6 +58,45 @@ public class CarritoService {
         }
     }
 
+     /**
+     * Consulta el precio de una variante en ms-catalogo.
+     *
+     * FeignException.NotFound → la variante no existe en catálogo
+     *   lanza IllegalStateException — no tiene sentido agregar
+     *   al carrito un producto que no existe en el catálogo.
+     *
+     * FeignException → ms-catalogo caído
+     *   lanza IllegalStateException — no podemos agregar sin precio,
+     *   el carrito quedaría con precio 0 lo cual es un error de negocio.
+     *   A diferencia del stock, el precio es obligatorio.
+     */
+    private BigDecimal obtenerPrecioVariante(Long idVariante) {
+        log.info("[SERVICE] Consultando precio de variante {} en ms-catalogo", idVariante);
+
+        try {
+            VarianteResponseDTO variante = catalogoClient.consultarVariante(idVariante);
+
+            log.info("[SERVICE] Precio obtenido para variante {}: {}",
+                    idVariante, variante.getPrecio());
+
+            return variante.getPrecio();
+
+        } catch (feign.FeignException.NotFound e) {
+            log.warn("[SERVICE] Variante {} no encontrada en ms-catalogo", idVariante);
+            throw new IllegalStateException(
+                "La variante " + idVariante + " no existe en el catalogo."
+            );
+
+        } catch (feign.FeignException e) {
+            log.warn("[SERVICE] ms-catalogo no disponible al consultar variante {}: {}",
+                    idVariante, e.getMessage());
+            throw new IllegalStateException(
+                "El catalogo no esta disponible. No se puede agregar el producto al carrito."
+            );
+        }
+    }
+
+
     // OBTENER O CREAR CARRITO
     @Transactional
     public CarritoDTO obtenerOCrearCarrito(Long idUsuario) {
@@ -77,14 +119,18 @@ public class CarritoService {
     @Transactional
     public CarritoDTO agregarItem(Long idUsuario, AgregarItemDTO dto) {
         log.info("[SERVICE] Agregando variante {} (x{}) al carrito del usuario {}",
-                dto.getIdVariante(), dto.getCantidad(), idUsuario);
+            dto.getIdVariante(), dto.getCantidad(), idUsuario);
 
-        // Verificar stock — usa FeignException internamente
+        // ── PASO 1: Verificar stock ──────────────────────────────
         if (!verificarStock(dto.getIdVariante(), dto.getCantidad())) {
             log.warn("[SERVICE] Stock insuficiente para variante {}", dto.getIdVariante());
             throw new StockNoDisponibleException(dto.getIdVariante(), dto.getCantidad());
         }
 
+        // ── PASO 2: Obtener precio real desde ms-catalogo ────────
+        BigDecimal precioUnitario = obtenerPrecioVariante(dto.getIdVariante());
+
+        // ── PASO 3: Obtener o crear carrito ──────────────────────
         Carrito carrito = carritoRepository.findByIdUsuario(idUsuario)
                 .orElseGet(() -> {
                     Carrito nuevo = new Carrito();
@@ -92,26 +138,29 @@ public class CarritoService {
                     return carritoRepository.save(nuevo);
                 });
 
-        // Si la variante ya está → sumar cantidad. Si no → crear item nuevo
+        // ── PASO 4: Si existe → sumar cantidad. Si no → crear ────
         itemCarritoRepository
                 .findByCarrito_IdCarritoAndIdVariante(carrito.getIdCarrito(), dto.getIdVariante())
                 .ifPresentOrElse(
                     itemExistente -> {
                         Integer nuevaCantidad = itemExistente.getCantidad() + dto.getCantidad();
                         itemExistente.setCantidad(nuevaCantidad);
+                        // Actualizamos también el precio por si cambió desde
+                        // la última vez que se agregó este producto
+                        itemExistente.setPrecioUnitario(precioUnitario);
                         itemCarritoRepository.save(itemExistente);
-                        log.info("[SERVICE] Variante {} ya existia. Nueva cantidad: {}",
-                                dto.getIdVariante(), nuevaCantidad);
+                        log.info("[SERVICE] Variante {} ya existia. Nueva cantidad: {} | Precio: {}",
+                                dto.getIdVariante(), nuevaCantidad, precioUnitario);
                     },
                     () -> {
                         ItemCarrito nuevoItem = new ItemCarrito();
                         nuevoItem.setCarrito(carrito);
                         nuevoItem.setIdVariante(dto.getIdVariante());
                         nuevoItem.setCantidad(dto.getCantidad());
-                        nuevoItem.setPrecioUnitario(BigDecimal.ZERO);
+                        nuevoItem.setPrecioUnitario(precioUnitario);
                         itemCarritoRepository.save(nuevoItem);
-                        log.info("[SERVICE] Nuevo item creado. Variante {}, cantidad: {}",
-                                dto.getIdVariante(), dto.getCantidad());
+                        log.info("[SERVICE] Nuevo item creado. Variante {}, cantidad: {}, precio: {}",
+                                dto.getIdVariante(), dto.getCantidad(), precioUnitario);
                     }
                 );
 
