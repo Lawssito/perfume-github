@@ -21,7 +21,7 @@ public class Credencial {
     @Column(name = "id_usuario", nullable = false, unique = true)
     private Long idUsuario;
 
-    @Column(name = "email_login", nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String emailLogin;
 
     @Column(name = "password_hash", nullable = false)
