@@ -1,67 +1,41 @@
 package com.ms_catalogo.service;
 
-import com.ms_catalogo.dto.*;
-import com.ms_catalogo.dto.VarianteDTO;
-import com.ms_catalogo.model.*;
-import com.ms_catalogo.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class CatalogoService {
+import com.ms_catalogo.dto.CategoriaDTO;
+import com.ms_catalogo.dto.CategoriaResponseDTO;
+import com.ms_catalogo.dto.MarcaDTO;
+import com.ms_catalogo.dto.MarcaResponseDTO;
+import com.ms_catalogo.dto.PerfumeDTO;
+import com.ms_catalogo.dto.PerfumeResponseDTO;
+import com.ms_catalogo.dto.VarianteDTO;
+import com.ms_catalogo.dto.VarianteResponseDTO;
 
-    private final PerfumeRepository perfumeRepository;
-    private final MarcaRepository marcaRepository;
-    private final CategoriaRepository categoriaRepository;
-    private final VarianteRepository varianteRepository;
+public interface CatalogoService {
 
-    @Transactional(readOnly = true)
-    public List<Perfume> listarCatalogoCompleto() {
-        log.info("Consultando el catálogo completo de perfumes");
-        return perfumeRepository.findAll();
-    }
+    List<PerfumeResponseDTO> listarCatalogoCompleto();
 
-    @Transactional
-    public Perfume crearPerfume(PerfumeDTO dto) {
-        log.info("Creando nuevo perfume: {}", dto.getNombre());
-        
-        Marca marca = marcaRepository.findById(dto.getIdMarca())
-                .orElseThrow(() -> new RuntimeException("Marca no encontrada con ID: " + dto.getIdMarca()));
-                
-        Categoria categoria = categoriaRepository.findById(dto.getIdCategoria())
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + dto.getIdCategoria()));
+    PerfumeResponseDTO obtenerPerfume(Long idPerfume);
 
-        Perfume perfume = Perfume.builder()
-                .marca(marca)
-                .categoria(categoria)
-                .nombre(dto.getNombre())
-                .concentracion(dto.getConcentracion())
-                .descripcion(dto.getDescripcion())
-                .estado("ACTIVO")
-                .build();
+    PerfumeResponseDTO crearPerfume(PerfumeDTO dto);
 
-        return perfumeRepository.save(perfume);
-    }
+    PerfumeResponseDTO actualizarPerfume(Long idPerfume, PerfumeDTO dto);
 
-    @Transactional
-    public Variante agregarVariante(Long idPerfume, VarianteDTO dto) {
-        log.info("Agregando variante de {}ml al perfume ID: {}", dto.getMl(), idPerfume);
-        
-        Perfume perfume = perfumeRepository.findById(idPerfume)
-                .orElseThrow(() -> new RuntimeException("Perfume no encontrado con ID: " + idPerfume));
+    void eliminarPerfume(Long idPerfume);
 
-        Variante variante = Variante.builder()
-                .perfume(perfume)
-                .sku(dto.getSku())
-                .ml(dto.getMl())
-                .precio(dto.getPrecio())
-                .build();
+    VarianteResponseDTO obtenerVariante(Long idVariante);
 
-        return varianteRepository.save(variante);
-    }
+    VarianteResponseDTO agregarVariante(Long idPerfume, VarianteDTO dto);
+
+    VarianteResponseDTO actualizarVariante(Long idVariante, VarianteDTO dto);
+
+    void eliminarVariante(Long idVariante);
+
+    List<MarcaResponseDTO> listarMarcas();
+
+    MarcaResponseDTO crearMarca(MarcaDTO dto);
+
+    List<CategoriaResponseDTO> listarCategorias();
+
+    CategoriaResponseDTO crearCategoria(CategoriaDTO dto);
 }
