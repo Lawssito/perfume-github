@@ -37,6 +37,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> manejarNoEncontrado(IllegalArgumentException ex) {
+        log.warn("Recurso no encontrado (404): {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                List.of(ex.getMessage())));
+    }
+
     // 2. Atrapa cualquier otro error genérico del sistema
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> manejarExcepcionGlobal(Exception ex) {
