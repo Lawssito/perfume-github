@@ -39,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void crearCredencial(CrearCredencialRequestDTO dto) {
         log.info("[SERVICE] Creando credenciales para idUsuario={} email={}", dto.getIdUsuario(), dto.getEmail());
-        if (credencialRepository.existsByEmail(dto.getEmail())) {
+        if (credencialRepository.existsByEmailLogin(dto.getEmail())) {
             throw new IllegalStateException("Ya existen credenciales para el email indicado");
         }
         if (credencialRepository.existsByIdUsuario(dto.getIdUsuario())) {
