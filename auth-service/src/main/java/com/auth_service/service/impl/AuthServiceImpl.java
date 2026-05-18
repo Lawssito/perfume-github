@@ -59,7 +59,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public AuthResponseDTO autenticarUsuario(LoginRequestDTO request) {
         log.info("[SERVICE] Login solicitado para email={}", request.getEmail());
-        Credencial credencial = credencialRepository.findByEmail(request.getEmail())
+        Credencial credencial = credencialRepository.findByEmailLogin(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales invalidas"));
 
         if (!"ACTIVO".equals(credencial.getEstadoCuenta())) {
