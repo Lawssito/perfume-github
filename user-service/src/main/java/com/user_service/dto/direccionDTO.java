@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class direccionDTO {
+public class DireccionDTO {
 
     @NotBlank(message = "La calle es obligatoria")
     private String calle;
