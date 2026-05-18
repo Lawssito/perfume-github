@@ -5,10 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class ValidarAccesoRequestDTO {
+public class AsignarRolRequestDTO {
     @NotNull(message = "El idUsuario es obligatorio")
     private Long idUsuario;
 
-    @NotBlank(message = "El permiso requerido es obligatorio")
-    private String permisoRequerido;
+    @NotBlank(message = "El nombre del rol es obligatorio")
+    private String rolNombre;
 }
