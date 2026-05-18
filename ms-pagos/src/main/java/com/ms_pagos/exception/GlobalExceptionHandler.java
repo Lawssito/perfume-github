@@ -76,6 +76,16 @@ public class GlobalExceptionHandler {
                 "Ya existe un pago registrado para ese pedido", request);
     }
 
+    @ExceptionHandler(NoHayMontoPorPagarException.class)
+    public ResponseEntity<ErrorResponse> handleNoHayMontoPorPagar(
+            NoHayMontoPorPagarException ex,
+            HttpServletRequest request) {
+
+        log.warn("[HANDLER] Pago sin monto en {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, "NO_AMOUNT_TO_PAY", ex.getMessage(), request);
+    }
+
+
     // ── Estado de negocio inválido ──
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(
@@ -86,7 +96,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "INVALID_STATE", ex.getMessage(), request);
     }
 
-    // ── Argumento inválido ──
+    // ── Error inesperado ──
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenerico(
             Exception ex,
