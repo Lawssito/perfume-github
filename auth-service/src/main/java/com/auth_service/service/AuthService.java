@@ -1,58 +1,28 @@
 package com.auth_service.service;
 
+import java.util.List;
 
-import org.springframework.stereotype.Service;
-
+import com.auth_service.dto.ActualizarEstadoCuentaDTO;
 import com.auth_service.dto.AuthResponseDTO;
+import com.auth_service.dto.CrearCredencialRequestDTO;
+import com.auth_service.dto.CredencialResponseDTO;
 import com.auth_service.dto.LoginRequestDTO;
-import com.auth_service.model.Credencial;
-import com.auth_service.repository.CredencialRepository;
+import com.auth_service.dto.TokenClaimsResponseDTO;
+import com.auth_service.dto.ValidateTokenRequestDTO;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class AuthService {
+public interface AuthService {
 
-    private final CredencialRepository credencialRepository;
-    // private final PasswordEncoder passwordEncoder; -> Para comparar hashes con BCrypt
+    void crearCredencial(CrearCredencialRequestDTO dto);
 
-    public AuthResponseDTO autenticarUsuario(LoginRequestDTO request) {
-        log.info("Iniciando intento de login para el email: {}", request.getEmail());
+    AuthResponseDTO autenticarUsuario(LoginRequestDTO request);
 
-        // 1. Buscar la credencial por email
-            Credencial credencial = credencialRepository.findByEmailLogin(request.getEmail())
-                .orElseThrow(() -> {
-                    log.warn("Login fallido: Usuario no encontrado para el email {}", request.getEmail());
-                    throw new RuntimeException("Credenciales inválidas"); // <-- CORREGIDO: Se usa throw, no return
-                });
+    TokenClaimsResponseDTO validarToken(ValidateTokenRequestDTO request);
 
-        // 2. Validar estado de la cuenta
-        if (!credencial.getEstadoCuenta().equals("ACTIVO")) {
-            log.warn("Login fallido: Cuenta bloqueada o inactiva para el ID {}", credencial.getIdUsuario());
-            throw new RuntimeException("Cuenta inactiva");
-        }
+    List<CredencialResponseDTO> listarCredenciales();
 
-        // 3. Validar contraseña (Aquí usarías passwordEncoder.matches() en la vida real)
-        if (!request.getPassword().equals(credencial.getPasswordHash())) { // Comparación temporal
-            log.error("Login fallido: Contraseña incorrecta para el email {}", request.getEmail());
-            throw new RuntimeException("Credenciales inválidas");
-        }
+    CredencialResponseDTO obtenerPorIdUsuario(Long idUsuario);
 
-        log.info("Autenticación exitosa. Generando tokens para el usuario ID: {}", credencial.getIdUsuario());
+    CredencialResponseDTO actualizarEstadoCuenta(Long idUsuario, ActualizarEstadoCuentaDTO dto);
 
-        // 4. Generar Tokens (Aquí llamarías a tu utilidad de JWT que uses con la librería JJWT)
-        String jwtMock = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockToken..." + credencial.getIdUsuario();
-        String refreshMock = "refresh-token-hash-12345";
-
-        // 5. Retornar la respuesta
-        AuthResponseDTO response = new AuthResponseDTO();
-        response.setToken(jwtMock);
-        response.setRefreshToken(refreshMock);
-        response.setIdUsuario(credencial.getIdUsuario());
-        response.setMensaje("Login exitoso");
-
-        return response;
-    }
+    void eliminarCredencial(Long idUsuario);
 }

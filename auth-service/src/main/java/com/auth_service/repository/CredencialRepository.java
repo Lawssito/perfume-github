@@ -1,11 +1,14 @@
 package com.auth_service.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-import com.auth_service.model.Credencial;   
 import java.util.Optional;
 
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.auth_service.model.Credencial;
+
 public interface CredencialRepository extends JpaRepository<Credencial, Long> {
-    Optional<Credencial> findByEmailLogin(String emailLogin);
+    Optional<Credencial> findByEmail(String email);
+    Optional<Credencial> findByIdUsuario(Long idUsuario);
+    boolean existsByEmail(String email);
+    boolean existsByIdUsuario(Long idUsuario);
 }
