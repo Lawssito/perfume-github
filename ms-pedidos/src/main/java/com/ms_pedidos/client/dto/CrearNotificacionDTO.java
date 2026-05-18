@@ -8,4 +8,11 @@ import lombok.Data;
 public class CrearNotificacionDTO {
     private Long   idUsuario;
     private String mensaje;
+    private String tipoEvento;
+
+    public CrearNotificacionDTO(Long idUsuario, String mensaje) {
+        this.idUsuario = idUsuario;
+        this.mensaje = mensaje;
+        this.tipoEvento = "PEDIDO_EVENTO";
+    }
 }

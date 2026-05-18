@@ -1,24 +1,27 @@
 server:
-  port: 8089
+  port: 8090
 
 spring:
   application:
     name: ms-pedidos
-
   datasource:
-    url: jdbc:mysql://localhost:3307/db_pedidos?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3307/bd_ms_pedidos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
     username: root
     password:
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
   jpa:
+    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
-      dialect: org.hibernate.dialect.MySQLDialect
-      format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
 
 eureka:
   client:
@@ -26,6 +29,21 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
   instance:
     prefer-ip-address: true
+
+logging:
+  level:
+    root: INFO
+    com.ms_pedidos: INFO
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Feign también puede resolver por Eureka usando los nombres de servicio.
+spring.cloud.openfeign.client.config.ms-carrito.url: http://localhost:8086
+spring.cloud.openfeign.client.config.ms-stock.url: http://localhost:8085
+spring.cloud.openfeign.client.config.ms-pagos.url: http://localhost:8087
+spring.cloud.openfeign.client.config.ms-envios.url: http://localhost:8088
+spring.cloud.openfeign.client.config.ms-notificaciones.url: http://localhost:8089
