@@ -1,20 +1,27 @@
 server:
-  port: 8083
+  port: 8086
 
 spring:
   application:
     name: ms-carrito
   datasource:
-    url: jdbc:mysql://localhost:3307/db_carrito?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3307/bd_ms_carrito?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
     username: root
-    password: 
+    password:
     driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
   jpa:
+    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
+    show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
 
 eureka:
   client:
@@ -24,3 +31,17 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
+
+logging:
+  level:
+    root: INFO
+    com.ms_carrito: INFO
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Feign también puede resolver por Eureka usando name=ms-catalogo/ms-stock.
+# Estas URL ayudan si quieres probar sin gateway.
+spring.cloud.openfeign.client.config.ms-catalogo.url: http://localhost:8084
+spring.cloud.openfeign.client.config.ms-stock.url: http://localhost:8085
