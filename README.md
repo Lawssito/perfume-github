@@ -13,6 +13,7 @@ Backend de un e-commerce de perfumes basado en **microservicios** con **Java 21*
 - [Ejecución local](#ejecución-local)
 - [API Gateway y rutas](#api-gateway-y-rutas)
 - [Endpoints principales](#endpoints-principales)
+- [Flujo de compra](#flujo-de-compra-carrito--pedido--pago)
 - [Pruebas con Postman](#pruebas-con-postman)
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Contribución](#contribución)
@@ -211,14 +212,79 @@ Todas las URLs siguientes usan el gateway: `http://localhost:8080`.
 - `GET /api/security/roles`
 - `POST /api/security/validar-permiso`
 
-### Otros dominios
+### Carrito (`ms-carrito`)
 
-- **Carrito:** `/api/carrito/**` (ms-carrito)
-- **Stock:** `/api/stock/**` (ms-stock)
-- **Pagos:** `/api/pagos/**` (ms-pagos)
+- `GET /api/carrito/{idUsuario}` — Obtener carrito (lo crea vacío si no existe)
+- `POST /api/carrito/{idUsuario}/items` — Agregar variante (`idVariante`, `cantidad`)
+- `PUT /api/carrito/{idUsuario}/items/{idItem}` — Actualizar cantidad
+- `DELETE /api/carrito/{idUsuario}/items/{idItem}` — Quitar un ítem
+- `DELETE /api/carrito/{idUsuario}` — Vaciar carrito (lo invoca `ms-pedidos` tras pago exitoso)
+
+Al agregar un ítem, `ms-carrito` consulta **ms-catalogo** (precio) y **ms-stock** (disponibilidad).
+
+### Stock (`ms-stock`)
+
+- `GET /api/stock` — Listar inventario (`idVariante`, `cantidadDisponible`)
+- `GET /api/stock/{idVariante}` — Consultar por variante
+- `POST /api/stock/{idVariante}` — Crear registro de inventario
+- `PUT /api/stock/{idVariante}/reponer` — Ingresar unidades
+- `PUT /api/stock/{idVariante}/reducir` — Descontar unidades
+
+> `cantidadReservada` existe en el modelo pero **no se usa** en la lógica actual; solo se expone en las respuestas (siempre `0` salvo cambios manuales en BD).
+
+### Pedidos (`ms-pedidos`)
+
+- `POST /api/pedidos` — Confirmar compra (orquesta carrito, catálogo, stock, pago, envío y notificaciones)
+- `GET /api/pedidos` — Listar todos
+- `GET /api/pedidos/usuario/{idUsuario}` — Historial por usuario
+- `GET /api/pedidos/{id}` — Detalle de un pedido
+- `PUT /api/pedidos/{id}/estado?estado=...` — Avanzar estado (bodega/admin)
+
+### Pagos (`ms-pagos`)
+
+- `POST /api/pagos` — Crear transacción (`PENDIENTE`)
+- `POST /api/pagos/{id}/procesar` — Simular pasarela (~80% `COMPLETADO`, ~20% `RECHAZADO`)
+- `GET /api/pagos/pedido/{idPedido}` — Consultar pago de un pedido
+
+En el checkout normal el cliente **no** llama a estos endpoints: `ms-pedidos` los invoca por Feign al confirmar el pedido. Sirven para pruebas aisladas del dominio de pagos.
+
+### Envíos y notificaciones
+
 - **Envíos:** `/api/envios/**` (ms-envios)
-- **Pedidos:** `/api/pedidos/**` (ms-pedidos)
 - **Notificaciones:** `/api/notificaciones/**` (ms-notificaciones)
+
+## Flujo de compra (carrito → pedido → pago)
+
+`ms-pedidos` actúa como **orquestador**: un solo `POST /api/pedidos` dispara el proceso completo vía OpenFeign.
+
+```text
+1. GET  /api/catalogo/productos     → ver idVariante, SKU y precio
+2. POST /api/stock/{idVariante}     → crear inventario (si no existe)
+3. PUT  /api/stock/{idVariante}/reponer
+4. POST /api/carrito/{idUsuario}/items
+5. POST /api/pedidos                → confirmar compra
+```
+
+**Qué hace `POST /api/pedidos` internamente:**
+
+1. Lee el carrito y valida que tenga ítems y total mayor a 0.
+2. Verifica stock en **ms-stock** (falla si no hay inventario o stock insuficiente).
+3. Consulta cada variante en **ms-catalogo** (SKU, ml) y guarda el pedido en estado `CREADO`.
+4. Crea y procesa el pago en **ms-pagos**.
+5. Si el pago es `COMPLETADO`: reduce stock, pasa el pedido a `PAGADO`, crea envío, notifica y **vacía el carrito**.
+6. Si el pago es `RECHAZADO`: pedido `CANCELADO` y el **carrito se mantiene** para reintentar.
+
+**Body de confirmación:**
+
+```json
+{
+  "idUsuario": 1,
+  "direccionEntrega": "Av. Providencia 1234, Santiago",
+  "courier": "CHILEXPRESS"
+}
+```
+
+**Servicios necesarios para el happy path:** `ms-catalogo`, `ms-stock`, `ms-carrito`, `ms-pagos` (y opcionalmente `ms-envios`, `ms-notificaciones`).
 
 Consulta Swagger en cada servicio (acceso directo al puerto del microservicio):
 
@@ -242,8 +308,12 @@ Consulta Swagger en cada servicio (acceso directo al puerto del microservicio):
 ```http
 POST http://localhost:8080/api/usuarios
 POST http://localhost:8080/api/auth/login
-GET  http://localhost:8080/api/catalogo/marcas
+GET  http://localhost:8080/api/catalogo/productos
+POST http://localhost:8080/api/carrito/1/items
+POST http://localhost:8080/api/pedidos
 ```
+
+Para descubrir `idVariante` en una BD con datos previos, usa `GET /api/catalogo/productos` o `GET /api/stock`.
 
 Si recibes **404** en el puerto 8080 pero el mismo path funciona en el puerto directo del servicio (por ejemplo 8081), verifica que el servicio esté registrado en Eureka y que el api-gateway se haya reiniciado tras cambios en su configuración.
 
