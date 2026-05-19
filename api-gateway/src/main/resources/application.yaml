@@ -6,51 +6,53 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        - id: auth-service
-          uri: lb://auth-service
-          predicates:
-            - Path=/api/auth/**
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/usuarios/**
-        - id: security-service-roles
-          uri: lb://security-service
-          predicates:
-            - Path=/api/usuario-roles/**
-        - id: security-service-permisos
-          uri: lb://security-service
-          predicates:
-            - Path=/api/security/**
-        - id: ms-catalogo
-          uri: lb://ms-catalogo
-          predicates:
-            - Path=/api/catalogo/**
-        - id: ms-stock
-          uri: lb://ms-stock
-          predicates:
-            - Path=/api/stock/**
-        - id: ms-carrito
-          uri: lb://ms-carrito
-          predicates:
-            - Path=/api/carrito/**
-        - id: ms-pagos
-          uri: lb://ms-pagos
-          predicates:
-            - Path=/api/pagos/**
-        - id: ms-envios
-          uri: lb://ms-envios
-          predicates:
-            - Path=/api/envios/**
-        - id: ms-notificaciones
-          uri: lb://ms-notificaciones
-          predicates:
-            - Path=/api/notificaciones/**
-        - id: ms-pedidos
-          uri: lb://ms-pedidos
-          predicates:
-            - Path=/api/pedidos/**
+      server:
+        webmvc:
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/api/usuarios/**
+            - id: security-service-roles
+              uri: lb://security-service
+              predicates:
+                - Path=/api/usuario-roles/**
+            - id: security-service-permisos
+              uri: lb://security-service
+              predicates:
+                - Path=/api/security/**
+            - id: ms-catalogo
+              uri: lb://ms-catalogo
+              predicates:
+                - Path=/api/catalogo/**
+            - id: ms-stock
+              uri: lb://ms-stock
+              predicates:
+                - Path=/api/stock/**
+            - id: ms-carrito
+              uri: lb://ms-carrito
+              predicates:
+                - Path=/api/carrito/**
+            - id: ms-pagos
+              uri: lb://ms-pagos
+              predicates:
+                - Path=/api/pagos/**
+            - id: ms-envios
+              uri: lb://ms-envios
+              predicates:
+                - Path=/api/envios/**
+            - id: ms-notificaciones
+              uri: lb://ms-notificaciones
+              predicates:
+                - Path=/api/notificaciones/**
+            - id: ms-pedidos
+              uri: lb://ms-pedidos
+              predicates:
+                - Path=/api/pedidos/**
 
 eureka:
   client:
