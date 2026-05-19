@@ -1,211 +1,278 @@
 # Perfume Store API
 
-Backend para un e-commerce de perfumes desarrollado con **Java + Spring Boot**.
-Este proyecto expone una API REST para gestionar catalogo, carrito, pedidos, pagos y autenticacion de usuarios.
+Backend de un e-commerce de perfumes basado en **microservicios** con **Java 21**, **Spring Boot 4** y **Spring Cloud 2025**. Expone una API REST para catálogo, usuarios, autenticación, carrito, pedidos, pagos, envíos, stock y notificaciones.
 
 ## Tabla de contenidos
 
-- [Descripcion](#descripcion)
-- [Tecnologias](#tecnologias)
-- [Arquitectura del proyecto](#arquitectura-del-proyecto)
+- [Descripción](#descripción)
+- [Tecnologías](#tecnologías)
+- [Arquitectura](#arquitectura)
+- [Servicios y puertos](#servicios-y-puertos)
 - [Requisitos](#requisitos)
-- [Configuracion](#configuracion)
-- [Ejecucion local](#ejecucion-local)
+- [Configuración](#configuración)
+- [Ejecución local](#ejecución-local)
+- [API Gateway y rutas](#api-gateway-y-rutas)
 - [Endpoints principales](#endpoints-principales)
-- [Estructura sugerida](#estructura-sugerida)
-- [Pruebas](#pruebas)
-- [Despliegue](#despliegue)
-- [Contribucion](#contribucion)
-- [Licencia](#licencia)
+- [Pruebas con Postman](#pruebas-con-postman)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Contribución](#contribución)
 
-## Descripcion
+## Descripción
 
-La API permite:
+El sistema permite:
 
-- Gestionar perfumes (catalogo, stock, precio, categorias, marcas).
-- Registrar e iniciar sesion de clientes.
-- Administrar carrito de compras.
-- Generar y consultar pedidos.
-- Integrar metodos de pago.
-- Gestionar direcciones de envio.
-- Mantener historial de compras.
+- Gestionar catálogo (perfumes, variantes, marcas y categorías).
+- Registrar usuarios y administrar direcciones de envío.
+- Autenticación con JWT (login y validación de token).
+- Roles y permisos centralizados.
+- Carrito de compras, pedidos, pagos y envíos.
+- Control de inventario y notificaciones.
 
-## Tecnologias
+Cada dominio vive en un microservicio independiente con su propia base de datos MySQL.
 
-- Java 17+
-- Spring Boot 3+
-- Spring Web
+## Tecnologías
+
+- Java 21
+- Spring Boot 4.0.x
+- Spring Cloud 2025.1.x (Eureka, Gateway Server WebMVC, OpenFeign, LoadBalancer)
 - Spring Data JPA
-- Spring Security + JWT
+- Spring Security + JWT (auth-service)
 - Bean Validation
-- PostgreSQL (o MySQL)
-- Maven o Gradle
-- Docker (opcional)
-- Swagger / OpenAPI (opcional)
+- MySQL
+- Maven
+- SpringDoc OpenAPI (Swagger UI en varios servicios)
 
-## Arquitectura del proyecto
+## Arquitectura
 
-Se recomienda arquitectura por capas:
+```text
+Cliente (Postman / Frontend)
+        │
+        ▼
+  API Gateway :8080
+        │
+        ▼
+  Eureka Server :8761  ◄── registro y descubrimiento
+        │
+        ├── auth-service
+        ├── user-service
+        ├── security-service
+        ├── ms-catalogo
+        ├── ms-stock
+        ├── ms-carrito
+        ├── ms-pagos
+        ├── ms-envios
+        ├── ms-notificaciones
+        └── ms-pedidos
+```
 
-- **Controller**: expone endpoints REST.
-- **Service**: contiene reglas de negocio.
-- **Repository**: acceso a datos con JPA.
-- **Domain/Entity**: modelos persistentes.
-- **DTO/Mapper**: contratos de entrada/salida.
-- **Security**: autenticacion y autorizacion.
+- **Eureka Server**: registro de instancias de cada microservicio.
+- **API Gateway**: punto de entrada único en el puerto `8080`. Enruta con `lb://<nombre-servicio>` hacia las instancias registradas en Eureka.
+- **Microservicios**: cada uno expone REST en su puerto y se comunica con otros vía OpenFeign cuando corresponde.
+
+Cada microservicio sigue capas internas: `controller` → `service` → `repository`, con `dto`, `model` y `exception`.
+
+## Servicios y puertos
+
+| Servicio | Puerto | Nombre en Eureka | Prefijo API |
+|----------|--------|------------------|-------------|
+| Eureka Server | 8761 | — | — |
+| API Gateway | **8080** | api-gateway | Todas las rutas `/api/**` |
+| user-service | 8081 | user-service | `/api/usuarios` |
+| auth-service | 8082 | auth-service | `/api/auth` |
+| security-service | 8083 | security-service | `/api/usuario-roles`, `/api/security` |
+| ms-catalogo | 8084 | ms-catalogo | `/api/catalogo` |
+| ms-stock | 8085 | ms-stock | `/api/stock` |
+| ms-carrito | 8086 | ms-carrito | `/api/carrito` |
+| ms-pagos | 8087 | ms-pagos | `/api/pagos` |
+| ms-envios | 8088 | ms-envios | `/api/envios` |
+| ms-notificaciones | 8089 | ms-notificaciones | `/api/notificaciones` |
+| ms-pedidos | 8090 | ms-pedidos | `/api/pedidos` |
+
+> **Recomendado:** usar siempre el **API Gateway** (`http://localhost:8080`) para las pruebas. Los puertos individuales sirven para depuración directa de cada servicio.
 
 ## Requisitos
 
-- JDK 17 o superior
-- Maven 3.9+ (o Gradle equivalente)
-- Base de datos PostgreSQL / MySQL
+- JDK 21
+- Maven 3.9+ (o el wrapper `./mvnw` incluido en cada módulo)
+- MySQL accesible en `localhost:3307` (cada servicio crea su base si no existe)
 - Git
 
-## Configuracion
+## Configuración
 
-Crear archivo de entorno (segun tu estrategia) y ajustar `application.yml` o `application.properties`.
-
-### Variables de entorno sugeridas
-
-```bash
-APP_PORT=8080
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=perfume_store
-DB_USER=postgres
-DB_PASSWORD=postgres
-JWT_SECRET=change_this_secret
-JWT_EXPIRATION_MS=86400000
-```
-
-### Ejemplo de `application.yml`
+Cada microservicio define su datasource en `src/main/resources/application.yml` (o `.yaml`). Por defecto:
 
 ```yaml
-server:
-  port: ${APP_PORT:8080}
-
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:perfume_store}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+    url: jdbc:mysql://localhost:3307/bd_<nombre_servicio>?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    username: root
+    password:          # vacío por defecto
 ```
 
-## Ejecucion local
+Ajusta usuario, contraseña y host según tu entorno local.
 
-### 1) Clonar el repositorio
+Eureka y el gateway apuntan a:
+
+```yaml
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+```
+
+## Ejecución local
+
+### 1. Clonar el repositorio
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
-cd <NOMBRE_DEL_PROYECTO>
+git clone https://github.com/Lawssito/perfume-github.git
+cd perfume-github
 ```
 
-### 2) Compilar el proyecto
+### 2. Levantar MySQL
 
-Con Maven:
+Asegúrate de que MySQL esté corriendo en el puerto configurado (`3307` por defecto en los `application.yml`).
+
+### 3. Orden de arranque
+
+Levanta los servicios en este orden (cada uno en su carpeta o desde el IDE):
+
+1. **eureka-server** → `http://localhost:8761`
+2. **api-gateway** → `http://localhost:8080`
+3. El resto de microservicios (orden flexible una vez Eureka esté activo)
+
+Ejemplo con Maven Wrapper desde la carpeta del servicio:
 
 ```bash
-mvn clean install
+cd eureka-server && ./mvnw spring-boot:run
+cd api-gateway && ./mvnw spring-boot:run
+cd user-service && ./mvnw spring-boot:run
+# ... repetir para cada microservicio
 ```
 
-### 3) Levantar la aplicacion
+### 4. Verificar registro en Eureka
 
-Con Maven:
+Abre `http://localhost:8761` y confirma que aparecen instancias `UP` de los servicios que necesites (por ejemplo `USER-SERVICE`, `AUTH-SERVICE`, `MS-CATALOGO`).
 
-```bash
-mvn spring-boot:run
-```
+Si el gateway responde **404** en rutas válidas, revisa que esté usando la configuración actual de rutas bajo `spring.cloud.gateway.server.webmvc.routes` en `api-gateway/src/main/resources/application.yaml`.
 
-La API quedara disponible en:
+## API Gateway y rutas
 
-- `http://localhost:8080`
+El gateway en el puerto **8080** reenvía según el path:
+
+| Ruta | Microservicio |
+|------|---------------|
+| `/api/auth/**` | auth-service |
+| `/api/usuarios/**` | user-service |
+| `/api/usuario-roles/**` | security-service |
+| `/api/security/**` | security-service |
+| `/api/catalogo/**` | ms-catalogo |
+| `/api/stock/**` | ms-stock |
+| `/api/carrito/**` | ms-carrito |
+| `/api/pagos/**` | ms-pagos |
+| `/api/envios/**` | ms-envios |
+| `/api/notificaciones/**` | ms-notificaciones |
+| `/api/pedidos/**` | ms-pedidos |
 
 ## Endpoints principales
 
-> Ajusta las rutas segun tu implementacion real.
+Todas las URLs siguientes usan el gateway: `http://localhost:8080`.
 
-### Auth
+### Autenticación (`auth-service`)
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
+- `POST /api/auth/login` — Iniciar sesión (devuelve JWT)
+- `POST /api/auth/validate` — Validar token
+- `POST /api/auth/credenciales` — Crear credenciales
+- `GET /api/auth/credenciales/usuario/{idUsuario}`
 
-### Catalogo de perfumes
+### Usuarios (`user-service`)
 
-- `GET /api/v1/perfumes`
-- `GET /api/v1/perfumes/{id}`
-- `POST /api/v1/perfumes` (admin)
-- `PUT /api/v1/perfumes/{id}` (admin)
-- `DELETE /api/v1/perfumes/{id}` (admin)
+- `POST /api/usuarios` — Registrar usuario
+- `GET /api/usuarios` — Listar usuarios
+- `GET /api/usuarios/{id}` — Obtener por ID
+- `PUT /api/usuarios/{id}` — Actualizar
+- `DELETE /api/usuarios/{id}` — Eliminar
+- `POST /api/usuarios/{id}/direcciones` — Agregar dirección
+- `GET /api/usuarios/{id}/direcciones` — Listar direcciones
 
-### Carrito
+### Catálogo (`ms-catalogo`)
 
-- `GET /api/v1/cart`
-- `POST /api/v1/cart/items`
-- `PUT /api/v1/cart/items/{itemId}`
-- `DELETE /api/v1/cart/items/{itemId}`
+- `GET /api/catalogo/marcas`
+- `GET /api/catalogo/categorias`
+- `GET /api/catalogo/productos`
+- `GET /api/catalogo/perfumes/{id}`
+- `POST /api/catalogo/perfumes`
+- `GET /api/catalogo/variantes/{id}`
 
-### Pedidos
+### Seguridad (`security-service`)
 
-- `POST /api/v1/orders`
-- `GET /api/v1/orders`
-- `GET /api/v1/orders/{id}`
+- `POST /api/usuario-roles` — Asignar rol a usuario
+- `GET /api/usuario-roles/{idUsuario}`
+- `GET /api/security/roles`
+- `POST /api/security/validar-permiso`
 
-## Estructura sugerida
+### Otros dominios
+
+- **Carrito:** `/api/carrito/**` (ms-carrito)
+- **Stock:** `/api/stock/**` (ms-stock)
+- **Pagos:** `/api/pagos/**` (ms-pagos)
+- **Envíos:** `/api/envios/**` (ms-envios)
+- **Pedidos:** `/api/pedidos/**` (ms-pedidos)
+- **Notificaciones:** `/api/notificaciones/**` (ms-notificaciones)
+
+Consulta Swagger en cada servicio (acceso directo al puerto del microservicio):
+
+- `http://localhost:8081/swagger-ui.html` (user-service)
+- `http://localhost:8082/swagger-ui.html` (auth-service)
+- `http://localhost:8084/swagger-ui.html` (ms-catalogo)
+- *(y así para los demás servicios que incluyan SpringDoc)*
+
+## Pruebas con Postman
+
+1. Levanta **Eureka**, **API Gateway** y el microservicio que vayas a probar.
+2. Usa la URL base del gateway: `http://localhost:8080`.
+3. Para endpoints protegidos, primero haz login y envía el header:
+
+   ```http
+   Authorization: Bearer <token>
+   ```
+
+**Ejemplos:**
+
+```http
+POST http://localhost:8080/api/usuarios
+POST http://localhost:8080/api/auth/login
+GET  http://localhost:8080/api/catalogo/marcas
+```
+
+Si recibes **404** en el puerto 8080 pero el mismo path funciona en el puerto directo del servicio (por ejemplo 8081), verifica que el servicio esté registrado en Eureka y que el api-gateway se haya reiniciado tras cambios en su configuración.
+
+## Estructura del repositorio
 
 ```text
-src/
-  main/
-    java/com/tuempresa/perfumestore/
-      config/
-      controller/
-      service/
-      repository/
-      domain/
-      dto/
-      security/
-      exception/
-    resources/
-      application.yml
-  test/
+perfume-github/
+├── eureka-server/       # Descubrimiento de servicios
+├── api-gateway/         # Puerta de entrada (8080)
+├── auth-service/
+├── user-service/
+├── security-service/
+├── ms-catalogo/
+├── ms-stock/
+├── ms-carrito/
+├── ms-pagos/
+├── ms-envios/
+├── ms-notificaciones/
+├── ms-pedidos/
+└── README.md
 ```
 
-## Pruebas
+Cada módulo es un proyecto Maven independiente con su propio `pom.xml` y `src/main/java`.
 
-Ejecutar tests:
+## Contribución
 
-Con Maven:
-
-```bash
-mvn test
-```
-
-## Despliegue
-
-Opciones comunes:
-
-- Docker + Docker Compose
-- Kubernetes
-- Plataformas cloud (AWS, GCP, Azure, Render, Railway, etc.)
-
-Recomendaciones:
-
-- Configurar perfiles (`dev`, `staging`, `prod`).
-- Usar migraciones con Flyway o Liquibase.
-- Centralizar logs y metricas.
-- Configurar health checks (`/actuator/health`).
-
-## Contribucion
-
-1. Crear una rama feature: `git checkout -b feature/nueva-funcionalidad`
-2. Realizar cambios y commits descriptivos.
-3. Abrir Pull Request con contexto funcional y tecnico.
+1. Crear una rama: `git checkout -b feature/nueva-funcionalidad`
+2. Realizar cambios con commits descriptivos.
+3. Abrir un Pull Request con contexto funcional y técnico.
 
 ## Licencia
 
