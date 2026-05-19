@@ -48,16 +48,6 @@ public class PedidoController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // GET /api/pedidos/{id}
-    // Consulta un pedido específico
-    @GetMapping("/{id}")
-    public ResponseEntity<PedidoDTO> consultarPorId(@PathVariable Long id) {
-        log.info("[CONTROLLER] GET /api/pedidos/{}", id);
-        PedidoDTO respuesta = pedidoService.consultarPorId(id);
-        log.info("[CONTROLLER] Pedido {} retornado. Estado: {}", id, respuesta.getEstado());
-        return ResponseEntity.ok(respuesta);
-    }
-
     // GET /api/pedidos/usuario/{idUsuario}
     // Lista todos los pedidos de un usuario — historial de compras
     @GetMapping("/usuario/{idUsuario}")
@@ -67,6 +57,16 @@ public class PedidoController {
         log.info("[CONTROLLER] GET /api/pedidos/usuario/{}", idUsuario);
         List<PedidoDTO> respuesta = pedidoService.listarPorUsuario(idUsuario);
         log.info("[CONTROLLER] Usuario {} tiene {} pedidos", idUsuario, respuesta.size());
+        return ResponseEntity.ok(respuesta);
+    }
+
+    // GET /api/pedidos/{id}
+    // Consulta un pedido específico
+    @GetMapping("/{id}")
+    public ResponseEntity<PedidoDTO> consultarPorId(@PathVariable Long id) {
+        log.info("[CONTROLLER] GET /api/pedidos/{}", id);
+        PedidoDTO respuesta = pedidoService.consultarPorId(id);
+        log.info("[CONTROLLER] Pedido {} retornado. Estado: {}", id, respuesta.getEstado());
         return ResponseEntity.ok(respuesta);
     }
 

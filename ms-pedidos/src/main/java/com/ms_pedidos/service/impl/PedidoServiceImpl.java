@@ -25,6 +25,7 @@ public class PedidoServiceImpl implements PedidoService {
 
     private final PedidoRepository   pedidoRepository;
     private final CarritoClient      carritoClient;
+    private final CatalogoClient     catalogoClient;
     private final StockClient        stockClient;
     private final PagoClient         pagoClient;
     private final EnvioClient        envioClient;
@@ -54,13 +55,11 @@ public class PedidoServiceImpl implements PedidoService {
         PagoDTO pagoProcessado = crearYProcesarPago(pedidoGuardado);
 
         if ("COMPLETADO".equals(pagoProcessado.getEstado())) {
-            // Pago exitoso → recién ahora se descuenta stock
             procesarPagoExitoso(pedidoGuardado, dto, carrito.getItems());
+            vaciarCarritoUsuario(dto.getIdUsuario());
         } else {
             procesarPagoRechazado(pedidoGuardado, dto.getIdUsuario());
         }
-
-        vaciarCarritoUsuario(dto.getIdUsuario());
 
         return mapToResponse(pedidoGuardado);
     }
@@ -177,12 +176,19 @@ public class PedidoServiceImpl implements PedidoService {
                 throw e;
 
             } catch (feign.FeignException.NotFound e) {
-                log.warn("[SERVICE] Variante {} sin registro en ms-stock. Continuando.",
-                        item.getIdVariante());
+                log.warn("[SERVICE] Variante {} sin registro en ms-stock", item.getIdVariante());
+                throw new IllegalStateException(
+                    "La variante " + item.getIdVariante()
+                    + " no tiene inventario. Crea el stock en ms-stock (puerto 8085) antes de confirmar."
+                );
 
             } catch (feign.FeignException e) {
-                log.warn("[SERVICE] ms-stock no disponible para variante {}. Continuando.",
-                        item.getIdVariante());
+                log.error("[SERVICE] ms-stock no disponible para variante {}: status={}",
+                        item.getIdVariante(), e.status());
+                throw new IllegalStateException(
+                    "El servicio de stock no esta disponible (ms-stock:8085). "
+                    + "Verifica GET http://localhost:8085/api/stock/" + item.getIdVariante()
+                );
             }
         }
     }
@@ -197,9 +203,21 @@ public class PedidoServiceImpl implements PedidoService {
                 log.info("[SERVICE] Stock reducido para variante {}. Cantidad: {}",
                         item.getIdVariante(), item.getCantidad());
 
+            } catch (feign.FeignException.NotFound e) {
+                log.error("[SERVICE] No existe inventario para variante {} al reducir stock",
+                        item.getIdVariante());
+                throw new IllegalStateException(
+                    "No se pudo descontar stock: la variante " + item.getIdVariante()
+                    + " no tiene registro en ms-stock."
+                );
+
             } catch (feign.FeignException e) {
-                log.warn("[SERVICE] No se pudo reducir stock para variante {}: {}",
-                        item.getIdVariante(), e.getMessage());
+                log.error("[SERVICE] Error al reducir stock para variante {}: status={}",
+                        item.getIdVariante(), e.status());
+                throw new IllegalStateException(
+                    "No se pudo descontar stock para la variante " + item.getIdVariante()
+                    + ". El pago fue procesado; revisa ms-stock (puerto 8085)."
+                );
             }
         }
     }
@@ -284,9 +302,17 @@ public class PedidoServiceImpl implements PedidoService {
             carritoClient.vaciarCarrito(idUsuario);
             log.info("[SERVICE] Carrito del usuario {} vaciado", idUsuario);
 
+        } catch (feign.FeignException.NotFound e) {
+            log.warn("[SERVICE] No existe carrito para vaciar (usuario {})", idUsuario);
+
         } catch (feign.FeignException e) {
-            log.warn("[SERVICE] No se pudo vaciar carrito del usuario {}: {}",
-                    idUsuario, e.getMessage());
+            log.error("[SERVICE] No se pudo vaciar carrito del usuario {}: status={}",
+                    idUsuario, e.status());
+            throw new IllegalStateException(
+                "El pedido fue confirmado pero no se pudo vaciar el carrito. "
+                + "Verifica ms-carrito (puerto 8086) o vacia manualmente: "
+                + "DELETE http://localhost:8086/api/carrito/" + idUsuario
+            );
         }
     }
 
@@ -381,11 +407,35 @@ public class PedidoServiceImpl implements PedidoService {
         DetallePedido detalle = new DetallePedido();
         detalle.setPedido(pedido);
         detalle.setIdVariante(item.getIdVariante());
-        detalle.setNombreProducto("Variante " + item.getIdVariante());
-        detalle.setMl(0);
+        VarianteResponseDTO variante = consultarVarianteCatalogo(item.getIdVariante());
+        detalle.setNombreProducto(
+                variante.getSku() != null && !variante.getSku().isBlank()
+                        ? variante.getSku()
+                        : "Variante " + item.getIdVariante());
+        detalle.setMl(variante.getMl());
         detalle.setCantidad(item.getCantidad());
         detalle.setPrecioUnitario(item.getPrecioUnitario());
         return detalle;
+    }
+
+    private VarianteResponseDTO consultarVarianteCatalogo(Long idVariante) {
+        try {
+            VarianteResponseDTO variante = catalogoClient.consultarVariante(idVariante);
+            if (variante.getMl() == null || variante.getMl() <= 0) {
+                throw new IllegalStateException(
+                        "La variante " + idVariante + " no tiene ml valido en el catalogo.");
+            }
+            return variante;
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (feign.FeignException.NotFound e) {
+            throw new IllegalStateException(
+                    "La variante " + idVariante + " no existe en el catalogo.");
+        } catch (feign.FeignException e) {
+            throw new IllegalStateException(
+                    "El catalogo no esta disponible (ms-catalogo:8084). "
+                    + "Verifica GET http://localhost:8084/api/catalogo/variantes/" + idVariante);
+        }
     }
 
     private PedidoDTO mapToResponse(Pedido pedido) {

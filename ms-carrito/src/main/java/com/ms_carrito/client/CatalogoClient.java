@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "ms-catalogo")
 public interface CatalogoClient {
 
-    @GetMapping("/api/variantes/{idVariante}")
+    @GetMapping("/api/catalogo/variantes/{idVariante}")
     VarianteResponseDTO consultarVariante(
             @PathVariable("idVariante") Long idVariante
     );

@@ -42,6 +42,7 @@ springdoc:
     path: /swagger-ui.html
 
 # Feign también puede resolver por Eureka usando los nombres de servicio.
+spring.cloud.openfeign.client.config.ms-catalogo.url: http://localhost:8084
 spring.cloud.openfeign.client.config.ms-carrito.url: http://localhost:8086
 spring.cloud.openfeign.client.config.ms-stock.url: http://localhost:8085
 spring.cloud.openfeign.client.config.ms-pagos.url: http://localhost:8087
