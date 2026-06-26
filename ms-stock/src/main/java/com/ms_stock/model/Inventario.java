@@ -6,14 +6,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import jakarta.validation.constraints.Min;
 
 @Table(name = "inventario")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data @Entity
+@Getter @Setter @Entity
 public class Inventario {
     
     @Id
@@ -25,8 +28,14 @@ public class Inventario {
     private Long idVariante;
 
     @Column(name = "cantidad_disponible", nullable = false)
+    @Min(0)
     private Integer cantidadDisponible;
 
     @Column(name = "cantidad_reservada", nullable = false)
+    @Min(0)
     private Integer cantidadReservada;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 }

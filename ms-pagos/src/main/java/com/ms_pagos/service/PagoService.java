@@ -12,4 +12,5 @@ public interface PagoService {
     PagoDTO consultarPorId(Long idTransaccion);
     PagoDTO consultarPorPedido(Long idPedido);
     List<PagoDTO> listarTodos();
+    PagoDTO reintentarPago(Long idTransaccion);
 }

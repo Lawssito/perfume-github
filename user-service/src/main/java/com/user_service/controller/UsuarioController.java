@@ -23,19 +23,20 @@ public class UsuarioController {
 
     @PostMapping
     public ResponseEntity<UsuarioResponseDTO> registrar(@Valid @RequestBody RegistroUsuarioRequestDTO dto) {
-        log.info("[CONTROLLER] POST /api/usuarios - email={}", dto.getEmail());
+        log.info("[AUDIT email={}] POST /api/usuarios — registro", dto.getEmail());
         UsuarioResponseDTO respuesta = usuarioService.registrarUsuario(dto);
-        log.info("[CONTROLLER] Usuario creado id={}", respuesta.getIdUsuario());
+        log.info("[AUDIT idUsuario={}] Usuario creado exitosamente", respuesta.getIdUsuario());
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
 
     @GetMapping
     public ResponseEntity<List<UsuarioResponseDTO>> listarTodos(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        autorizacionUsuarioService.exigirAdmin(authorization);
-        log.info("[CONTROLLER] GET /api/usuarios - listando todos");
+        UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
+        autorizacionUsuarioService.exigirAdmin(auth);
+        log.info("[AUDIT email={} idUsuario={}] GET /api/usuarios — listado admin", auth.getEmail(), auth.getIdUsuario());
         List<UsuarioResponseDTO> lista = usuarioService.listarTodos();
-        log.info("[CONTROLLER] Retornando {} usuarios", lista.size());
+        log.info("[AUDIT] Retornando {} usuarios", lista.size());
         return ResponseEntity.ok(lista);
     }
 
@@ -43,8 +44,9 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponseDTO> obtenerPorId(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(authorization, id);
-        log.info("[CONTROLLER] GET /api/usuarios/{}", id);
+        UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
+        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);
+        log.info("[AUDIT email={} idUsuario={}] GET /api/usuarios/{}", auth.getEmail(), auth.getIdUsuario(), id);
         return ResponseEntity.ok(usuarioService.obtenerPorId(id));
     }
 
@@ -53,8 +55,9 @@ public class UsuarioController {
             @PathVariable Long id,
             @Valid @RequestBody ActualizarUsuarioDTO dto,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(authorization, id);
-        log.info("[CONTROLLER] PUT /api/usuarios/{}", id);
+        UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
+        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);
+        log.info("[AUDIT email={} idUsuario={}] PUT /api/usuarios/{}}", auth.getEmail(), auth.getIdUsuario(), id);
         return ResponseEntity.ok(usuarioService.actualizar(id, dto));
     }
 
@@ -62,8 +65,9 @@ public class UsuarioController {
     public ResponseEntity<Void> eliminar(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        autorizacionUsuarioService.exigirAdmin(authorization);
-        log.info("[CONTROLLER] DELETE /api/usuarios/{}", id);
+        UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
+        autorizacionUsuarioService.exigirAdmin(auth);
+        log.info("[AUDIT email={} idUsuario={}] DELETE /api/usuarios/{} — baja logica", auth.getEmail(), auth.getIdUsuario(), id);
         usuarioService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
@@ -73,9 +77,11 @@ public class UsuarioController {
             @PathVariable Long id,
             @Valid @RequestBody DireccionDTO dto,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(authorization, id);
-        log.info("[CONTROLLER] POST /api/usuarios/{}/direcciones", id);
+        UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
+        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);
+        log.info("[AUDIT email={}] POST /api/usuarios/{}/direcciones", auth.getEmail(), id);
         DireccionResponseDTO respuesta = usuarioService.agregarDireccion(id, dto);
+        log.info("[AUDIT email={}] Direccion {} creada para usuario {}", auth.getEmail(), respuesta.getIdDireccion(), id);
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
 
@@ -83,8 +89,9 @@ public class UsuarioController {
     public ResponseEntity<List<DireccionResponseDTO>> listarDirecciones(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(authorization, id);
-        log.info("[CONTROLLER] GET /api/usuarios/{}/direcciones", id);
+        UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
+        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);
+        log.info("[AUDIT email={}] GET /api/usuarios/{}/direcciones", auth.getEmail(), id);
         return ResponseEntity.ok(usuarioService.listarDirecciones(id));
     }
 
@@ -93,8 +100,9 @@ public class UsuarioController {
             @PathVariable Long id,
             @PathVariable Long idDireccion,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(authorization, id);
-        log.info("[CONTROLLER] DELETE /api/usuarios/{}/direcciones/{}", id, idDireccion);
+        UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
+        autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);
+        log.info("[AUDIT email={}] DELETE /api/usuarios/{}/direcciones/{}", auth.getEmail(), id, idDireccion);
         usuarioService.eliminarDireccion(id, idDireccion);
         return ResponseEntity.noContent().build();
     }

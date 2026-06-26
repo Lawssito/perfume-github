@@ -45,3 +45,6 @@ INSERT IGNORE INTO rol_permisos (id_rol, id_permiso) VALUES
     (1, 1),
     (2, 1), (2, 2), (2, 3), (2, 4),
     (3, 1), (3, 2), (3, 4);
+
+-- NOTA: La asignacion de roles a usuarios se maneja via SecurityInitializer (configuracion)
+-- que lee la propiedad 'security.admin.default-user-id' de application.yml

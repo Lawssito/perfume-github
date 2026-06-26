@@ -18,5 +18,7 @@ public class PedidoDTO {
     private EstadoPedido                 estado;
     private BigDecimal                   total;
     private LocalDateTime                fechaCreacion;
+    private String                       direccionEntrega;
+    private String                       courier;
     private List<DetallePedidoDTO> detalles;
 }

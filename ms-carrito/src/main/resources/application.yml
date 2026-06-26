@@ -17,7 +17,7 @@ spring:
     defer-datasource-initialization: true
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -40,8 +40,3 @@ logging:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
-
-# Feign también puede resolver por Eureka usando name=ms-catalogo/ms-stock.
-# Estas URL ayudan si quieres probar sin gateway.
-spring.cloud.openfeign.client.config.ms-catalogo.url: http://localhost:8084
-spring.cloud.openfeign.client.config.ms-stock.url: http://localhost:8085

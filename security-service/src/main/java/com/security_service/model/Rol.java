@@ -22,7 +22,7 @@ public class Rol {
     private String nombre; // Ej: "ADMIN", "CLIENTE"
 
     // Relación Muchos a Muchos con Permisos
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "rol_permisos",
         joinColumns = @JoinColumn(name = "id_rol"),

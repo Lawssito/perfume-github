@@ -9,5 +9,4 @@ public class StockResponseDTO {
     private Long    idInventario;
     private Long    idVariante;
     private Integer cantidadDisponible;
-    private Integer cantidadReservada;
 }

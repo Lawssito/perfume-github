@@ -9,6 +9,6 @@ import com.ms_pedidos.client.dto.CrearNotificacionDTO;
 @FeignClient(name = "ms-notificaciones")
 public interface NotificacionClient {
 
-    @PostMapping("/api/notificaciones")
+    @PostMapping("/api/notificaciones/enviar")
     void enviarNotificacion(@RequestBody CrearNotificacionDTO dto);
 }

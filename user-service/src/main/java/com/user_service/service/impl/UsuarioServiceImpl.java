@@ -37,9 +37,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public UsuarioResponseDTO registrarUsuario(RegistroUsuarioRequestDTO dto) {
-        log.info("[SERVICE] Registrando perfil con email={}", dto.getEmail());
+        log.info("[AUDIT email={}] Registrando perfil", dto.getEmail());
         if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {
-            log.warn("[SERVICE] Email ya registrado: {}", dto.getEmail());
+            log.warn("[AUDIT email={}] Email ya registrado", dto.getEmail());
             throw new IllegalStateException("Email ya registrado");
         }
 
@@ -56,23 +56,23 @@ public class UsuarioServiceImpl implements UsuarioService {
                     new CrearCredencialClientDTO(guardado.getIdUsuario(), guardado.getEmail(), dto.getPassword()));
             securityServiceClient.asignarRol(new AsignarRolClientDTO(guardado.getIdUsuario(), "ROLE_CLIENTE"));
         } catch (feign.FeignException ex) {
-            log.error("[SERVICE] Error comunicando con auth-service/security-service para usuario {}: status={} body={}",
+            log.error("[AUDIT idUsuario={}] Error comunicando con auth-service/security-service: status={} body={}",
                     guardado.getIdUsuario(), ex.status(), ex.contentUTF8());
             throw new RemoteServiceException("No se pudo completar el registro: fallo comunicando con auth-service o security-service");
         }
 
-        log.info("[SERVICE] Perfil creado idUsuario={}", guardado.getIdUsuario());
+        log.info("[AUDIT idUsuario={}] Perfil creado exitosamente", guardado.getIdUsuario());
         return mapToDTO(guardado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public UsuarioResponseDTO obtenerPorId(Long idUsuario) {
-        log.info("[SERVICE] Consultando usuario id={}", idUsuario);
+        log.info("[AUDIT idUsuario={}] Consultando datos", idUsuario);
         return usuarioRepository.findById(idUsuario)
                 .map(this::mapToDTO)
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] Usuario no encontrado id={}", idUsuario);
+                    log.warn("[AUDIT idUsuario={}] No encontrado", idUsuario);
                     return new IllegalArgumentException("Usuario no encontrado");
                 });
     }
@@ -80,18 +80,18 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarTodos() {
-        log.info("[SERVICE] Listando todos los usuarios");
+        log.info("[AUDIT] Listando todos los usuarios");
         List<UsuarioResponseDTO> lista = usuarioRepository.findAll().stream()
                 .map(this::mapToDTO)
                 .toList();
-        log.info("[SERVICE] Total usuarios: {}", lista.size());
+        log.info("[AUDIT] Total usuarios: {}", lista.size());
         return lista;
     }
 
     @Override
     @Transactional
     public UsuarioResponseDTO actualizar(Long idUsuario, ActualizarUsuarioDTO dto) {
-        log.info("[SERVICE] Actualizando usuario id={}", idUsuario);
+        log.info("[AUDIT idUsuario={}] Actualizando datos", idUsuario);
         Usuario usuario = obtenerEntidad(idUsuario);
         if (dto.getNombre() != null) {
             usuario.setNombre(dto.getNombre());
@@ -100,24 +100,37 @@ public class UsuarioServiceImpl implements UsuarioService {
             usuario.setTelefono(dto.getTelefono());
         }
         Usuario actualizado = usuarioRepository.save(usuario);
-        log.info("[SERVICE] Usuario id={} actualizado", idUsuario);
+        log.info("[AUDIT idUsuario={}] Actualizado exitosamente", idUsuario);
         return mapToDTO(actualizado);
     }
 
     @Override
     @Transactional
     public void eliminar(Long idUsuario) {
-        log.info("[SERVICE] Eliminacion logica usuario id={}", idUsuario);
+        log.info("[AUDIT idUsuario={}] Baja logica de usuario", idUsuario);
         Usuario usuario = obtenerEntidad(idUsuario);
         usuario.setEstado("ELIMINADO");
         usuarioRepository.save(usuario);
-        log.info("[SERVICE] Usuario id={} marcado como ELIMINADO", idUsuario);
+
+        // Desactivar credenciales en auth-service para inhabilitar el acceso
+        try {
+            authServiceClient.actualizarEstadoCuenta(
+                idUsuario,
+                new com.user_service.dto.ActualizarEstadoCredencialClientDTO("INACTIVO")
+            );
+            log.info("[AUDIT idUsuario={}] Credenciales desactivadas en auth-service", idUsuario);
+        } catch (feign.FeignException e) {
+            log.warn("[AUDIT idUsuario={}] No se pudieron desactivar credenciales: {}", idUsuario, e.getMessage());
+            // No revertimos la eliminación lógica — el usuario ya fue marcado
+        }
+
+        log.info("[AUDIT idUsuario={}] Marcado como ELIMINADO", idUsuario);
     }
 
     @Override
     @Transactional
     public DireccionResponseDTO agregarDireccion(Long idUsuario, DireccionDTO dto) {
-        log.info("[SERVICE] Agregando direccion a usuario id={}", idUsuario);
+        log.info("[AUDIT idUsuario={}] Agregando direccion", idUsuario);
         Usuario usuario = obtenerEntidad(idUsuario);
         Direccion direccion = Direccion.builder()
                 .usuario(usuario)
@@ -128,14 +141,14 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .tipoAlias(dto.getTipoAlias())
                 .build();
         Direccion guardada = direccionRepository.save(direccion);
-        log.info("[SERVICE] Direccion id={} creada para usuario id={}", guardada.getIdDireccion(), idUsuario);
+        log.info("[AUDIT idUsuario={}] Direccion {} creada", idUsuario, guardada.getIdDireccion());
         return mapDireccion(guardada);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DireccionResponseDTO> listarDirecciones(Long idUsuario) {
-        log.info("[SERVICE] Listando direcciones de usuario id={}", idUsuario);
+        log.info("[AUDIT idUsuario={}] Listando direcciones", idUsuario);
         obtenerEntidad(idUsuario);
         return direccionRepository.findByUsuarioIdUsuario(idUsuario).stream()
                 .map(this::mapDireccion)
@@ -145,11 +158,14 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public void eliminarDireccion(Long idUsuario, Long idDireccion) {
-        log.info("[SERVICE] Eliminando direccion id={} de usuario id={}", idDireccion, idUsuario);
+        log.info("[AUDIT idUsuario={}] Eliminando direccion {}", idUsuario, idDireccion);
         Direccion direccion = direccionRepository.findByIdDireccionAndUsuarioIdUsuario(idDireccion, idUsuario)
-                .orElseThrow(() -> new IllegalArgumentException("Direccion no encontrada"));
+                .orElseThrow(() -> {
+                    log.warn("[AUDIT idUsuario={}] Direccion {} no encontrada", idUsuario, idDireccion);
+                    return new IllegalArgumentException("Direccion no encontrada");
+                });
         direccionRepository.delete(direccion);
-        log.info("[SERVICE] Direccion id={} eliminada", idDireccion);
+        log.info("[AUDIT idUsuario={}] Direccion {} eliminada", idUsuario, idDireccion);
     }
 
     private Usuario obtenerEntidad(Long idUsuario) {

@@ -2,14 +2,15 @@ package com.ms_pedidos.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "detalle_pedidos")
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class DetallePedido {

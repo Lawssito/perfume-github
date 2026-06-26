@@ -31,100 +31,123 @@ public class PedidoServiceImpl implements PedidoService {
     private final EnvioClient        envioClient;
     private final NotificacionClient notificacionClient;
 
-    // CREAR PEDIDO
     @Override
     @Transactional
-    public PedidoDTO crearPedido(CrearPedidoDTO dto) {
-        log.info("[SERVICE] Iniciando creacion de pedido para usuario ID: {}", dto.getIdUsuario());
-
-        CarritoDTO carrito = obtenerCarrito(dto.getIdUsuario());
-        validarCarritoNoVacio(carrito, dto.getIdUsuario());
+    public PedidoDTO crearPedido(CrearPedidoDTO dto, Long idUsuario) {
+        log.info("[AUDIT idUsuario={}] Iniciando creacion de pedido", idUsuario);
+        CarritoDTO carrito = obtenerCarrito(idUsuario);
+        validarCarritoNoVacio(carrito, idUsuario);
         validarMontoTotalPorPagar(carrito);
 
-        // Verificamos stock ANTES de crear el pedido
-        // pero NO lo descontamos todavía
-        verificarStockItems(carrito.getItems());
-
         Pedido pedidoGuardado = pedidoRepository.save(
-            buildPedido(dto.getIdUsuario(), carrito));
-        log.info("[SERVICE] Pedido creado con ID: {} | Total: {} | Estado: {}",
-                pedidoGuardado.getIdPedido(), pedidoGuardado.getTotal(), pedidoGuardado.getEstado());
+            buildPedido(idUsuario, carrito));
+        log.info("[AUDIT idUsuario={}] Pedido {} creado en estado CREADO. Total: {}",
+                idUsuario, pedidoGuardado.getIdPedido(), pedidoGuardado.getTotal());
 
-        // Crear y procesar pago — pasamos los items para descontar
-        // stock SOLO si el pago queda COMPLETADO
-        PagoDTO pagoProcessado = crearYProcesarPago(pedidoGuardado);
+        // Guardamos dirección y courier en el pedido para usarlos después
+        pedidoGuardado.setDireccionEntrega(dto.getDireccionEntrega());
+        pedidoGuardado.setCourier(dto.getCourier());
+        pedidoRepository.save(pedidoGuardado);
 
-        if ("COMPLETADO".equals(pagoProcessado.getEstado())) {
-            procesarPagoExitoso(pedidoGuardado, dto, carrito.getItems());
-            vaciarCarritoUsuario(dto.getIdUsuario());
-        } else {
-            procesarPagoRechazado(pedidoGuardado, dto.getIdUsuario());
-        }
+        // RESERVAR stock con claves determinísticas (Fix #1)
+        reservarStockPedido(pedidoGuardado);
+        log.info("[AUDIT pedidoId={}] Stock reservado exitosamente", pedidoGuardado.getIdPedido());
 
         return mapToResponse(pedidoGuardado);
     }
 
-    // ACTUALIZAR ESTADO
     @Override
     @Transactional
-    public PedidoDTO actualizarEstado(Long idPedido, EstadoPedido nuevoEstado) {
-        log.info("[SERVICE] Actualizando estado del pedido {} a {}", idPedido, nuevoEstado);
-
-        Pedido pedido       = obtenerPorId(idPedido);
-        EstadoPedido actual = pedido.getEstado();
-
-        validarTransicion(actual, nuevoEstado);
-        pedido.setEstado(nuevoEstado);
-
-        Pedido actualizado = pedidoRepository.save(pedido);
-        log.info("[SERVICE] Pedido {} actualizado: {} → {}", idPedido, actual, nuevoEstado);
-
-        notificarCambioEstado(pedido.getIdUsuario(), idPedido, nuevoEstado);
-
-        return mapToResponse(actualizado);
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // CONSULTAR POR ID
-    // ─────────────────────────────────────────────────────────
-
-    @Override
-    public PedidoDTO consultarPorId(Long idPedido) {
-        log.info("[SERVICE] Consultando pedido ID: {}", idPedido);
-
+    public PedidoDTO pagarPedido(Long idPedido) {
+        log.info("[AUDIT pedidoId={}] Iniciando pago", idPedido);
         Pedido pedido = obtenerPorId(idPedido);
 
-        log.info("[SERVICE] Pedido {} encontrado. Estado: {} | Total: {}",
-                idPedido, pedido.getEstado(), pedido.getTotal());
+        if (pedido.getEstado() != EstadoPedido.CREADO) {
+            log.warn("[AUDIT pedidoId={}] Estado invalido para pago: {}", idPedido, pedido.getEstado());
+            throw new IllegalStateException(
+                "El pedido debe estar en estado CREADO para pagarlo. Estado actual: " + pedido.getEstado());
+        }
+
+        PagoDTO pagoProcesado = crearYProcesarPago(pedido);
+
+        if ("COMPLETADO".equals(pagoProcesado.getEstado())) {
+            // Pago exitoso → ejecutar post-pago completo (stock, envio, carrito, notificacion)
+            ejecutarPostPago(pedido);
+            log.info("[AUDIT pedidoId={}] Pago exitoso y pedido confirmado → EN_PREPARACION", idPedido);
+        } else {
+            log.warn("[AUDIT pedidoId={}] Pago rechazado: {}. Pedido queda en CREADO para reintentar.",
+                    idPedido, pagoProcesado.getEstado());
+            throw new IllegalStateException(
+                "El pago fue rechazado. Puedes reintentar el pago con POST /api/pedidos/" + idPedido + "/pagar");
+        }
 
         return mapToResponse(pedido);
     }
 
-    // ─────────────────────────────────────────────────────────
-    // LISTAR POR USUARIO
-    // ─────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public PedidoDTO confirmarPedido(Long idPedido) {
+        log.info("[AUDIT pedidoId={}] Confirmando pedido post-pago", idPedido);
+        Pedido pedido = obtenerPorId(idPedido);
+
+        if (pedido.getEstado() != EstadoPedido.PAGADO) {
+            log.warn("[AUDIT pedidoId={}] Estado invalido para confirmar: {}", idPedido, pedido.getEstado());
+            throw new IllegalStateException(
+                "El pedido debe estar en estado PAGADO para confirmarlo. Estado actual: " + pedido.getEstado());
+        }
+
+        // Para pedidos legacy en PAGADO, ejecutar post-pago
+        ejecutarPostPago(pedido);
+        log.info("[AUDIT pedidoId={}] Pedido confirmado (legacy PAGADO) → EN_PREPARACION", idPedido);
+
+        return mapToResponse(pedido);
+    }
+
+    @Override
+    @Transactional
+    public PedidoDTO actualizarEstado(Long idPedido, EstadoPedido nuevoEstado) {
+        log.info("[AUDIT pedidoId={}] Cambio de estado a {}", idPedido, nuevoEstado);
+        Pedido pedido       = obtenerPorId(idPedido);
+        EstadoPedido actual = pedido.getEstado();
+        validarTransicion(actual, nuevoEstado);
+
+        if (actual == EstadoPedido.EN_PREPARACION && nuevoEstado == EstadoPedido.CANCELADO) {
+            log.info("[AUDIT pedidoId={}] Cancelando pedido EN_PREPARACION — restaurando stock", idPedido);
+            restaurarStockPedido(pedido);
+        } else if ((actual == EstadoPedido.CREADO || actual == EstadoPedido.PAGADO)
+                && nuevoEstado == EstadoPedido.CANCELADO) {
+            log.info("[AUDIT pedidoId={}] Cancelando pedido {} — liberando reserva", idPedido, actual);
+            liberarReservaPedido(pedido);
+        }
+
+        pedido.setEstado(nuevoEstado);
+        Pedido actualizado = pedidoRepository.save(pedido);
+        log.info("[AUDIT pedidoId={}] Estado: {} → {}", idPedido, actual, nuevoEstado);
+        notificarCambioEstado(pedido.getIdUsuario(), idPedido, nuevoEstado);
+        return mapToResponse(actualizado);
+    }
+
+    @Override
+    public PedidoDTO consultarPorId(Long idPedido) {
+        log.info("[AUDIT pedidoId={}] Consultando pedido", idPedido);
+        Pedido pedido = obtenerPorId(idPedido);
+        log.info("[AUDIT pedidoId={}] Estado: {} | Total: {}", idPedido, pedido.getEstado(), pedido.getTotal());
+        return mapToResponse(pedido);
+    }
 
     @Override
     public List<PedidoDTO> listarPorUsuario(Long idUsuario) {
-        log.info("[SERVICE] Listando pedidos del usuario ID: {}", idUsuario);
-
+        log.info("[AUDIT idUsuario={}] Listando pedidos", idUsuario);
         List<Pedido> pedidos = pedidoRepository.findByIdUsuario(idUsuario);
-
-        log.info("[SERVICE] Usuario {} tiene {} pedidos", idUsuario, pedidos.size());
+        log.info("[AUDIT idUsuario={}] Tiene {} pedidos", idUsuario, pedidos.size());
         return pedidos.stream().map(this::mapToResponse).toList();
     }
 
-    // ─────────────────────────────────────────────────────────
-    // LISTAR TODOS
-    // ─────────────────────────────────────────────────────────
-
     @Override
     public List<PedidoDTO> listarTodos() {
-        log.info("[SERVICE] Listando todos los pedidos");
-
+        log.info("[AUDIT] Listando todos los pedidos");
         List<Pedido> pedidos = pedidoRepository.findAll();
-
-        log.info("[SERVICE] Total de pedidos: {}", pedidos.size());
+        log.info("[AUDIT] Total pedidos: {}", pedidos.size());
         return pedidos.stream().map(this::mapToResponse).toList();
     }
 
@@ -134,152 +157,113 @@ public class PedidoServiceImpl implements PedidoService {
 
     private CarritoDTO obtenerCarrito(Long idUsuario) {
         try {
-            CarritoDTO carrito = carritoClient.obtenerCarrito(idUsuario);
-            log.info("[SERVICE] Carrito obtenido para usuario {}. Items: {}",
-                    idUsuario, carrito.getItems().size());
+            CarritoDTO carrito = carritoClient.obtenerCarrito();
+            log.info("[AUDIT idUsuario={}] Carrito obtenido. Items: {}", idUsuario, carrito.getItems().size());
             return carrito;
-
         } catch (feign.FeignException.NotFound e) {
-            log.warn("[SERVICE] No existe carrito para usuario {}", idUsuario);
-            throw new IllegalStateException(
-                "No existe carrito para el usuario " + idUsuario
-            );
-
+            log.warn("[AUDIT idUsuario={}] No existe carrito", idUsuario);
+            throw new IllegalStateException("No existe carrito para el usuario " + idUsuario);
         } catch (feign.FeignException e) {
-            log.warn("[SERVICE] ms-carrito no disponible: {}", e.getMessage());
-            throw new IllegalStateException(
-                "El servicio de carrito no esta disponible. Intenta nuevamente."
-            );
+            log.warn("[AUDIT idUsuario={}] ms-carrito no disponible: {}", idUsuario, e.getMessage());
+            throw new IllegalStateException("El servicio de carrito no esta disponible. Intenta nuevamente.");
         }
     }
 
-    private void verificarStockItems(List<ItemCarritoDTO> items) {
-        log.info("[SERVICE] Verificando stock para {} items", items.size());
-
-        for (ItemCarritoDTO item : items) {
+    private void restaurarStockPedido(Pedido pedido) {
+        for (DetallePedido detalle : pedido.getDetalles()) {
             try {
-                StockDTO stock = stockClient.consultarStock(item.getIdVariante());
-                if (stock.getCantidadDisponible() < item.getCantidad()) {
-                    log.warn("[SERVICE] Stock insuficiente para variante {}. Disponible: {}, Requerido: {}",
-                            item.getIdVariante(),
-                            stock.getCantidadDisponible(),
-                            item.getCantidad());
-                    throw new IllegalStateException(
-                        "Stock insuficiente para variante " + item.getIdVariante()
-                        + ". Disponible: " + stock.getCantidadDisponible()
-                        + ", requerido: " + item.getCantidad()
-                    );
-                }
-                log.info("[SERVICE] Stock OK para variante {}", item.getIdVariante());
-
-            } catch (IllegalStateException e) {
-                throw e;
-
-            } catch (feign.FeignException.NotFound e) {
-                log.warn("[SERVICE] Variante {} sin registro en ms-stock", item.getIdVariante());
-                throw new IllegalStateException(
-                    "La variante " + item.getIdVariante()
-                    + " no tiene inventario. Crea el stock en ms-stock (puerto 8085) antes de confirmar."
+                stockClient.reponerStock(
+                    detalle.getIdVariante(),
+                    new ReponerStockClientDTO(detalle.getCantidad())
                 );
-
+                log.info("[AUDIT pedidoId={}] Stock repuesto variante {}: +{}", pedido.getIdPedido(), detalle.getIdVariante(), detalle.getCantidad());
             } catch (feign.FeignException e) {
-                log.error("[SERVICE] ms-stock no disponible para variante {}: status={}",
-                        item.getIdVariante(), e.status());
-                throw new IllegalStateException(
-                    "El servicio de stock no esta disponible (ms-stock:8085). "
-                    + "Verifica GET http://localhost:8085/api/stock/" + item.getIdVariante()
-                );
-            }
-        }
-    }
-
-    private void reducirStockItems(List<ItemCarritoDTO> items) {
-        for (ItemCarritoDTO item : items) {
-            try {
-                stockClient.reducirStock(
-                    item.getIdVariante(),
-                    new ReducirStockClientDTO(item.getCantidad())
-                );
-                log.info("[SERVICE] Stock reducido para variante {}. Cantidad: {}",
-                        item.getIdVariante(), item.getCantidad());
-
-            } catch (feign.FeignException.NotFound e) {
-                log.error("[SERVICE] No existe inventario para variante {} al reducir stock",
-                        item.getIdVariante());
-                throw new IllegalStateException(
-                    "No se pudo descontar stock: la variante " + item.getIdVariante()
-                    + " no tiene registro en ms-stock."
-                );
-
-            } catch (feign.FeignException e) {
-                log.error("[SERVICE] Error al reducir stock para variante {}: status={}",
-                        item.getIdVariante(), e.status());
-                throw new IllegalStateException(
-                    "No se pudo descontar stock para la variante " + item.getIdVariante()
-                    + ". El pago fue procesado; revisa ms-stock (puerto 8085)."
-                );
+                log.error("[AUDIT pedidoId={}] Error reponiendo stock variante {}: status={}", pedido.getIdPedido(), detalle.getIdVariante(), e.status());
             }
         }
     }
 
     private PagoDTO crearYProcesarPago(Pedido pedido) {
+        Long idPedido = pedido.getIdPedido();
+
+        // 1) Buscar si ya existe un pago para este pedido (ej. RECHAZADO previamente)
         try {
-            log.info("[SERVICE] Creando pago para pedido {}", pedido.getIdPedido());
+            PagoDTO existente = pagoClient.consultarPorPedido(idPedido);
+            if (existente != null && existente.getIdTransaccion() != null) {
+                log.info("[AUDIT pedidoId={}] Pago existente: ID={} estado={}",
+                        idPedido, existente.getIdTransaccion(), existente.getEstado());
 
-            PagoDTO pago = pagoClient.crearPago(
-                new CrearPagoClientDTO(pedido.getIdPedido(), pedido.getTotal(), "TARJETA")
-            );
-            log.info("[SERVICE] Pago creado con ID: {}. Procesando...", pago.getIdTransaccion());
+                if ("COMPLETADO".equals(existente.getEstado())) {
+                    return existente; // Ya fue completado, reusamos
+                }
 
-            PagoDTO procesado = pagoClient.procesarPago(pago.getIdTransaccion());
-            log.info("[SERVICE] Resultado del pago: {}", procesado.getEstado());
-            return procesado;
-
+                if ("RECHAZADO".equals(existente.getEstado())) {
+                    log.info("[AUDIT pedidoId={}] Reintentando pago {}", idPedido, existente.getIdTransaccion());
+                    PagoDTO reintentado = pagoClient.reintentarPago(existente.getIdTransaccion());
+                    log.info("[AUDIT pedidoId={}] Reintento resultado: {}", idPedido, reintentado.getEstado());
+                    return reintentado;
+                }
+            }
+        } catch (feign.FeignException.NotFound e) {
+            log.info("[AUDIT pedidoId={}] No hay pago previo. Creando uno nuevo...", idPedido);
         } catch (feign.FeignException e) {
-            log.error("[SERVICE] ms-pagos no disponible. Cancelando pedido {}: status={} {}",
-                    pedido.getIdPedido(), e.status(), e.getMessage());
+            log.warn("[AUDIT pedidoId={}] No se pudo consultar pago existente, creando nuevo: {}",
+                    idPedido, e.getMessage());
+        }
 
+        // 2) No existe pago previo — creamos y procesamos
+        try {
+            log.info("[AUDIT pedidoId={}] Creando pago", idPedido);
+            PagoDTO pago = pagoClient.crearPago(
+                new CrearPagoClientDTO(idPedido, pedido.getTotal(), "TARJETA")
+            );
+            log.info("[AUDIT pedidoId={}] Pago {} creado. Procesando...", idPedido, pago.getIdTransaccion());
+            PagoDTO procesado = pagoClient.procesarPago(pago.getIdTransaccion());
+            log.info("[AUDIT pedidoId={}] Resultado pago: {}", idPedido, procesado.getEstado());
+            return procesado;
+        } catch (feign.FeignException e) {
+            log.error("[AUDIT pedidoId={}] ms-pagos no disponible. Cancelando pedido: status={} msg={}",
+                    idPedido, e.status(), e.getMessage());
             pedido.setEstado(EstadoPedido.CANCELADO);
             pedidoRepository.save(pedido);
-
             notificar(pedido.getIdUsuario(),
-                "No se pudo procesar tu pago. El pedido #"
-                + pedido.getIdPedido() + " fue cancelado.");
-
+                "No se pudo procesar tu pago. El pedido #" + idPedido + " fue cancelado.");
             throw new IllegalStateException(
                 "El servicio de pagos no esta disponible (ms-pagos:8087). "
-                + "Enciende ms-pagos y verifica: POST http://localhost:8087/api/pagos"
-            );
+                + "Enciende ms-pagos y verifica: POST http://localhost:8087/api/pagos");
         }
     }
 
-    private void procesarPagoExitoso(Pedido pedido, CrearPedidoDTO dto, List<ItemCarritoDTO> items) {
-        // 1. Descontar stock — recién aquí, después de confirmar el pago
-        reducirStockItems(items);
+    private void ejecutarPostPago(Pedido pedido) {
+        Long idPedido = pedido.getIdPedido();
 
-        // 2. Cambiar estado del pedido
-        pedido.setEstado(EstadoPedido.PAGADO);
+        // CONFIRMAR reserva (stock sale del sistema definitivamente)
+        confirmarReservaPedido(pedido);
+        log.info("[AUDIT pedidoId={}] Reserva confirmada. Creando envio...", idPedido);
+
+        try {
+            // Crear envío
+            crearEnvio(idPedido, pedido.getDireccionEntrega(), pedido.getCourier());
+            // Vaciar carrito
+            vaciarCarritoUsuario(pedido.getIdUsuario());
+        } catch (Exception e) {
+            // COMPENSACIÓN: si falla envio o carrito, reponemos stock
+            log.error("[AUDIT pedidoId={}] Fallo posterior a confirmar reserva. Reponiendo stock: {}",
+                    idPedido, e.getMessage());
+            restaurarStockPedido(pedido);
+            pedido.setEstado(EstadoPedido.PAGADO);
+            pedidoRepository.save(pedido);
+            throw e;
+        }
+
+        // Avanzar estado a EN_PREPARACION
+        pedido.setEstado(EstadoPedido.EN_PREPARACION);
         pedidoRepository.save(pedido);
-        log.info("[SERVICE] Pedido {} actualizado a PAGADO", pedido.getIdPedido());
+        log.info("[AUDIT pedidoId={}] Pedido confirmado → EN_PREPARACION", idPedido);
 
-        // 3. Crear envío
-        crearEnvio(pedido.getIdPedido(), dto.getDireccionEntrega(), dto.getCourier());
-
-        // 4. Notificar
-        notificar(dto.getIdUsuario(), "Tu pedido #" + pedido.getIdPedido() + " fue confirmado y esta siendo procesado.");
-    }
-
-    // ── PAGO RECHAZADO — sin tocar stock ─────────────────────────
-    private void procesarPagoRechazado(Pedido pedido, Long idUsuario) {
-        // El stock NO se toca — nunca se descontó
-        pedido.setEstado(EstadoPedido.CANCELADO);
-        pedidoRepository.save(pedido);
-        log.warn("[SERVICE] Pago rechazado. Pedido {} cancelado. Stock intacto.",
-                pedido.getIdPedido());
-
-        notificar(idUsuario,
-            "Tu pago fue rechazado. El pedido #"
-            + pedido.getIdPedido() + " fue cancelado.");
+        // Notificar
+        notificar(pedido.getIdUsuario(),
+            "Tu pedido #" + idPedido + " fue confirmado y esta siendo procesado.");
     }
 
     private void crearEnvio(Long idPedido, String direccion, String courier) {
@@ -287,32 +271,24 @@ public class PedidoServiceImpl implements PedidoService {
             EnvioDTO envio = envioClient.crearEnvio(
                 new CrearEnvioClientDTO(idPedido, direccion, courier)
             );
-            log.info("[SERVICE] Envio creado para pedido {}. Tracking: {}",
-                    idPedido, envio.getNumeroTracking());
-
+            log.info("[AUDIT pedidoId={}] Envio creado. Tracking: {}", idPedido, envio.getNumeroTracking());
         } catch (feign.FeignException e) {
-            log.warn("[SERVICE] No se pudo crear envio para pedido {}: {}. " +
-                    "El pago fue exitoso — el envio debe gestionarse manualmente.",
-                    idPedido, e.getMessage());
+            log.warn("[AUDIT pedidoId={}] No se pudo crear envio: {}. Gestion manual.", idPedido, e.getMessage());
         }
     }
 
     private void vaciarCarritoUsuario(Long idUsuario) {
         try {
-            carritoClient.vaciarCarrito(idUsuario);
-            log.info("[SERVICE] Carrito del usuario {} vaciado", idUsuario);
-
+            carritoClient.vaciarCarrito();
+            log.info("[AUDIT idUsuario={}] Carrito vaciado", idUsuario);
         } catch (feign.FeignException.NotFound e) {
-            log.warn("[SERVICE] No existe carrito para vaciar (usuario {})", idUsuario);
-
+            log.warn("[AUDIT idUsuario={}] No existe carrito para vaciar", idUsuario);
         } catch (feign.FeignException e) {
-            log.error("[SERVICE] No se pudo vaciar carrito del usuario {}: status={}",
-                    idUsuario, e.status());
+            log.error("[AUDIT idUsuario={}] No se pudo vaciar carrito: status={}", idUsuario, e.status());
             throw new IllegalStateException(
                 "El pedido fue confirmado pero no se pudo vaciar el carrito. "
-                + "Verifica ms-carrito (puerto 8086) o vacia manualmente: "
-                + "DELETE http://localhost:8086/api/carrito/" + idUsuario
-            );
+                + "Verifica ms-carrito (puerto 8086) o vacia manualmente mediante "
+                + "DELETE /api/carrito");
         }
     }
 
@@ -321,57 +297,50 @@ public class PedidoServiceImpl implements PedidoService {
             notificacionClient.enviarNotificacion(
                 new CrearNotificacionDTO(idUsuario, mensaje)
             );
-            log.info("[SERVICE] Notificacion enviada al usuario {}: {}", idUsuario, mensaje);
-
+            log.info("[AUDIT idUsuario={}] Notificacion enviada: {}", idUsuario, mensaje);
         } catch (feign.FeignException e) {
-            // Si ms-notificaciones está caído, solo se loguea
-            // El pedido ya fue creado y pagado — no se revierte nada
-            log.warn("[SERVICE] No se pudo notificar al usuario {}: {}", idUsuario, e.getMessage());
+            log.warn("[AUDIT idUsuario={}] No se pudo notificar: {}", idUsuario, e.getMessage());
         }
     }
 
-    // MÉTODOS AUXILIARES PRIVADOS — dominio
     private Pedido obtenerPorId(Long idPedido) {
         return pedidoRepository.findById(idPedido)
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] Pedido ID {} no encontrado", idPedido);
+                    log.warn("[AUDIT pedidoId={}] No encontrado", idPedido);
                     return new PedidoNotFoundException(idPedido);
                 });
     }
 
     private void validarCarritoNoVacio(CarritoDTO carrito, Long idUsuario) {
         if (carrito.getItems() == null || carrito.getItems().isEmpty()) {
-            log.warn("[SERVICE] Carrito del usuario {} esta vacio", idUsuario);
-            throw new IllegalStateException(
-                "El carrito esta vacio. Agrega productos antes de confirmar."
-            );
+            log.warn("[AUDIT idUsuario={}] Carrito vacio", idUsuario);
+            throw new IllegalStateException("El carrito esta vacio. Agrega productos antes de confirmar.");
         }
     }
 
     private void validarMontoTotalPorPagar(CarritoDTO carrito) {
         if (carrito.getTotal() == null || carrito.getTotal().compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("[SERVICE] Carrito sin monto por pagar. idCarrito={} total={}",
-                    carrito.getIdCarrito(), carrito.getTotal());
+            log.warn("[AUDIT] Carrito sin monto. idCarrito={} total={}", carrito.getIdCarrito(), carrito.getTotal());
             throw new IllegalStateException(
-                "No se puede crear el pedido porque no hay nada que pagar. " +
-                "Agrega productos con precio mayor a 0 antes de confirmar."
-            );
+                "No se puede crear el pedido porque no hay nada que pagar. "
+                + "Agrega productos con precio mayor a 0 antes de confirmar.");
         }
     }
 
     private void validarTransicion(EstadoPedido actual, EstadoPedido solicitado) {
         boolean valida = switch (actual) {
             case CREADO         -> solicitado == EstadoPedido.PAGADO
+                                || solicitado == EstadoPedido.EN_PREPARACION
                                 || solicitado == EstadoPedido.CANCELADO;
             case PAGADO         -> solicitado == EstadoPedido.EN_PREPARACION
                                 || solicitado == EstadoPedido.CANCELADO;
-            case EN_PREPARACION -> solicitado == EstadoPedido.ENVIADO;
+            case EN_PREPARACION -> solicitado == EstadoPedido.ENVIADO
+                                || solicitado == EstadoPedido.CANCELADO;
             case ENVIADO        -> solicitado == EstadoPedido.ENTREGADO;
             case ENTREGADO, CANCELADO -> false;
         };
-
         if (!valida) {
-            log.warn("[SERVICE] Transicion invalida: {} → {}", actual, solicitado);
+            log.warn("[AUDIT] Transicion invalida: {} → {}", actual, solicitado);
             throw new TransicionEstadoInvalidaException(actual, solicitado);
         }
     }
@@ -384,7 +353,6 @@ public class PedidoServiceImpl implements PedidoService {
             case CANCELADO      -> "Tu pedido #" + idPedido + " ha sido cancelado.";
             default             -> null;
         };
-
         if (mensaje != null) {
             notificar(idUsuario, mensaje);
         }
@@ -394,11 +362,9 @@ public class PedidoServiceImpl implements PedidoService {
         Pedido pedido = new Pedido();
         pedido.setIdUsuario(idUsuario);
         pedido.setTotal(carrito.getTotal());
-
         List<DetallePedido> detalles = carrito.getItems().stream()
                 .map(item -> buildDetalle(pedido, item))
                 .toList();
-
         pedido.setDetalles(detalles);
         return pedido;
     }
@@ -414,7 +380,8 @@ public class PedidoServiceImpl implements PedidoService {
                         : "Variante " + item.getIdVariante());
         detalle.setMl(variante.getMl());
         detalle.setCantidad(item.getCantidad());
-        detalle.setPrecioUnitario(item.getPrecioUnitario());
+        // Usar precio ACTUAL del catálogo, no el snapshot del carrito (Fix #5)
+        detalle.setPrecioUnitario(variante.getPrecio());
         return detalle;
     }
 
@@ -429,12 +396,73 @@ public class PedidoServiceImpl implements PedidoService {
         } catch (IllegalStateException e) {
             throw e;
         } catch (feign.FeignException.NotFound e) {
-            throw new IllegalStateException(
-                    "La variante " + idVariante + " no existe en el catalogo.");
+            throw new IllegalStateException("La variante " + idVariante + " no existe en el catalogo.");
         } catch (feign.FeignException e) {
             throw new IllegalStateException(
                     "El catalogo no esta disponible (ms-catalogo:8084). "
                     + "Verifica GET http://localhost:8084/api/catalogo/variantes/" + idVariante);
+        }
+    }
+
+    private void reservarStockPedido(Pedido pedido) {
+        for (DetallePedido detalle : pedido.getDetalles()) {
+            try {
+                String key = "RESERVA_PEDIDO_" + pedido.getIdPedido() + "_VARIANTE_" + detalle.getIdVariante();
+                stockClient.reservarStock(
+                    detalle.getIdVariante(),
+                    new ReservarStockClientDTO(detalle.getCantidad(), key)
+                );
+                log.info("[AUDIT pedidoId={}] Stock reservado variante {}: -{}",
+                        pedido.getIdPedido(), detalle.getIdVariante(), detalle.getCantidad());
+            } catch (feign.FeignException e) {
+                log.error("[AUDIT pedidoId={}] Error reservando stock variante {}: status={}",
+                        pedido.getIdPedido(), detalle.getIdVariante(), e.status());
+                // Liberar reservas ya hechas (compensación parcial)
+                liberarReservaPedido(pedido);
+                notificar(pedido.getIdUsuario(),
+                    "No se pudo completar tu pedido #" + pedido.getIdPedido()
+                    + " por falta de stock. Se ha liberado la reserva.");
+                throw new IllegalStateException(
+                    "No se pudo reservar stock para la variante " + detalle.getIdVariante()
+                    + ". Stock insuficiente o ms-stock no disponible.");
+            }
+        }
+    }
+
+    private void confirmarReservaPedido(Pedido pedido) {
+        for (DetallePedido detalle : pedido.getDetalles()) {
+            try {
+                String key = "CONFIRMAR_PEDIDO_" + pedido.getIdPedido() + "_VARIANTE_" + detalle.getIdVariante();
+                stockClient.confirmarReserva(
+                    detalle.getIdVariante(),
+                    new ConfirmarReservaClientDTO(detalle.getCantidad(), key)
+                );
+                log.info("[AUDIT pedidoId={}] Reserva confirmada variante {}: -{}",
+                        pedido.getIdPedido(), detalle.getIdVariante(), detalle.getCantidad());
+            } catch (feign.FeignException e) {
+                log.error("[AUDIT pedidoId={}] Error confirmando reserva variante {}: status={}",
+                        pedido.getIdPedido(), detalle.getIdVariante(), e.status());
+                throw new IllegalStateException(
+                    "No se pudo confirmar la reserva de stock para la variante " + detalle.getIdVariante()
+                    + ". El pedido esta PAGADO; revisa ms-stock.");
+            }
+        }
+    }
+
+    private void liberarReservaPedido(Pedido pedido) {
+        for (DetallePedido detalle : pedido.getDetalles()) {
+            try {
+                String key = "LIBERAR_PEDIDO_" + pedido.getIdPedido() + "_VARIANTE_" + detalle.getIdVariante();
+                stockClient.liberarReserva(
+                    detalle.getIdVariante(),
+                    new LiberarReservaClientDTO(detalle.getCantidad(), key)
+                );
+                log.info("[AUDIT pedidoId={}] Reserva liberada variante {}: +{}",
+                        pedido.getIdPedido(), detalle.getIdVariante(), detalle.getCantidad());
+            } catch (feign.FeignException e) {
+                log.error("[AUDIT pedidoId={}] Error liberando reserva variante {}: status={}",
+                        pedido.getIdPedido(), detalle.getIdVariante(), e.status());
+            }
         }
     }
 
@@ -461,6 +489,8 @@ public class PedidoServiceImpl implements PedidoService {
             pedido.getEstado(),
             pedido.getTotal(),
             pedido.getFechaCreacion(),
+            pedido.getDireccionEntrega(),
+            pedido.getCourier(),
             detallesDTO
         );
     }

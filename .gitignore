@@ -1,4 +1,63 @@
+# ─── OS ───────────────────────────────
 .DS_Store
 **/.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+
+# ─── IDE / Editor ────────────────────
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings
+.factorypath
+.apt_generated
+.springBeans
+.sts4-cache
+.metadata
+
+# ─── Python virtual env ──────────────
+.venv/
+venv/
+env/
+
+# ─── Java / Maven ────────────────────
 target/
 *.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+.mvn/wrapper/maven-wrapper.jar
+
+# ─── Ejecutables / instaladores ──────
+*.bat
+*.sh
+*.exe
+*.msi
+*.dmg
+*.pkg
+
+# ─── Node ─────────────────────────────
+node_modules/
+
+# ─── Logs ─────────────────────────────
+*.log
+
+# ─── Entorno / secretos ──────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Bases de datos locales ──────────
+*.db
+*.sqlite
+*.sqlite3
+data/
+mysql-data/

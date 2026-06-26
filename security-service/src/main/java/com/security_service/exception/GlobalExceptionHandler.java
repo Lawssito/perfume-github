@@ -8,15 +8,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     // 1. Manejo de validaciones de DTOs (@Valid, @NotBlank, etc)
@@ -38,35 +36,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    // 2. Manejo de Tokens Expirados
-    @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<ErrorResponse> manejarTokenExpirado(ExpiredJwtException ex) {
+    // 2. Excepciones genéricas no controladas
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> manejarForbidden(ForbiddenException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
-                HttpStatus.UNAUTHORIZED.value(),
-                "El token de seguridad ha expirado",
-                List.of("Por favor, solicite un nuevo token iniciando sesión nuevamente.")
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                List.of(ex.getMessage())
         );
-
-        log.warn("Intento de acceso con token expirado (401): {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        log.warn("Acceso denegado: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
-    // 3. Manejo de Firmas de Token Inválidas o Manipuladas
-    @ExceptionHandler(SignatureException.class)
-    public ResponseEntity<ErrorResponse> manejarFirmaInvalida(SignatureException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.UNAUTHORIZED.value(),
-                "Firma del token inválida",
-                List.of("El token provisto ha sido alterado o no es válido.")
-        );
-
-        log.warn("Intento de acceso con firma de token inválida (401): {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-    }
-
-    // 4. Excepciones genéricas no controladas
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> manejarExcepcionGlobal(Exception ex) {
         ErrorResponse errorResponse = new ErrorResponse(

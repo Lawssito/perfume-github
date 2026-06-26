@@ -60,8 +60,23 @@ public class AutorizacionUsuarioService {
         }
     }
 
+    public void exigirAdmin(UsuarioAutenticadoDTO usuario) {
+        if (!usuario.esAdmin()) {
+            log.warn("[AUTHZ] Usuario {} intento accion solo ADMIN. Roles={}", usuario.getIdUsuario(), usuario.getRoles());
+            throw new ForbiddenException("No tienes permisos de administrador para realizar esta accion");
+        }
+    }
+
     public void exigirMismoUsuarioOAdmin(String authorizationHeader, Long idUsuarioObjetivo) {
         UsuarioAutenticadoDTO usuario = validarSesion(authorizationHeader);
+        if (!usuario.esAdmin() && !usuario.getIdUsuario().equals(idUsuarioObjetivo)) {
+            log.warn("[AUTHZ] Usuario {} intento acceder/modificar usuario {}. Roles={}",
+                    usuario.getIdUsuario(), idUsuarioObjetivo, usuario.getRoles());
+            throw new ForbiddenException("Solo puedes gestionar tus propios datos personales");
+        }
+    }
+
+    public void exigirMismoUsuarioOAdmin(UsuarioAutenticadoDTO usuario, Long idUsuarioObjetivo) {
         if (!usuario.esAdmin() && !usuario.getIdUsuario().equals(idUsuarioObjetivo)) {
             log.warn("[AUTHZ] Usuario {} intento acceder/modificar usuario {}. Roles={}",
                     usuario.getIdUsuario(), idUsuarioObjetivo, usuario.getRoles());

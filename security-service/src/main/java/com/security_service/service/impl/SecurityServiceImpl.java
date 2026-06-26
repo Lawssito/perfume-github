@@ -28,7 +28,7 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @Transactional
     public RolesUsuarioResponseDTO asignarRol(AsignarRolRequestDTO request) {
-        log.info("[SERVICE] Asignando rol {} a usuario {}", request.getRolNombre(), request.getIdUsuario());
+        log.info("[AUDIT] Asignando rol {} a usuario {}", request.getRolNombre(), request.getIdUsuario());
         Rol rol = rolRepository.findByNombre(request.getRolNombre())
                 .orElseGet(() -> rolRepository.save(Rol.builder().nombre(request.getRolNombre()).build()));
 
@@ -49,14 +49,14 @@ public class SecurityServiceImpl implements SecurityService {
         List<String> roles = usuarioRolRepository.findByIdUsuario(idUsuario).stream()
                 .map(ur -> ur.getRol().getNombre())
                 .toList();
-        log.info("[SERVICE] Roles de usuario {}: {}", idUsuario, roles);
+        log.info("[AUDIT] Roles de usuario {}: {}", idUsuario, roles);
         return new RolesUsuarioResponseDTO(idUsuario, roles);
     }
 
     @Override
     @Transactional
     public void revocarRol(Long idUsuario, String rolNombre) {
-        log.info("[SERVICE] Revocando rol {} de usuario {}", rolNombre, idUsuario);
+        log.info("[AUDIT] Revocando rol {} de usuario {}", rolNombre, idUsuario);
         usuarioRolRepository.findByIdUsuario(idUsuario).stream()
                 .filter(ur -> ur.getRol().getNombre().equals(rolNombre))
                 .findFirst()
@@ -70,7 +70,7 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @Transactional(readOnly = true)
     public ValidacionResponseDTO validarPermiso(ValidarAccesoRequestDTO request) {
-        log.info("[SERVICE] Validando permiso {} para usuario {}", request.getPermisoRequerido(), request.getIdUsuario());
+        log.info("[AUDIT] Validando permiso {} para usuario {}", request.getPermisoRequerido(), request.getIdUsuario());
         boolean tienePermiso = usuarioRolRepository.findByIdUsuario(request.getIdUsuario()).stream()
                 .flatMap(ur -> ur.getRol().getPermisos() == null
                         ? java.util.stream.Stream.empty()
@@ -87,14 +87,14 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @Transactional(readOnly = true)
     public List<RolResponseDTO> listarRoles() {
-        log.info("[SERVICE] Listando roles");
+        log.info("[AUDIT] Listando roles");
         return rolRepository.findAll().stream().map(this::mapRol).toList();
     }
 
     @Override
     @Transactional
     public RolResponseDTO crearRol(RolRequestDTO dto) {
-        log.info("[SERVICE] Creando rol {}", dto.getNombre());
+        log.info("[AUDIT] Creando rol {}", dto.getNombre());
         if (rolRepository.findByNombre(dto.getNombre()).isPresent()) {
             throw new IllegalStateException("El rol ya existe");
         }
@@ -111,7 +111,7 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @Transactional
     public RolResponseDTO actualizarRol(Long idRol, RolRequestDTO dto) {
-        log.info("[SERVICE] Actualizando rol id={}", idRol);
+        log.info("[AUDIT] Actualizando rol id={}", idRol);
         Rol rol = obtenerRolEntidad(idRol);
         rol.setNombre(dto.getNombre());
         return mapRol(rolRepository.save(rol));
@@ -120,14 +120,14 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @Transactional
     public void eliminarRol(Long idRol) {
-        log.info("[SERVICE] Eliminando rol id={}", idRol);
+        log.info("[AUDIT] Eliminando rol id={}", idRol);
         rolRepository.delete(obtenerRolEntidad(idRol));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PermisoResponseDTO> listarPermisos() {
-        log.info("[SERVICE] Listando permisos");
+        log.info("[AUDIT] Listando permisos");
         return permisoRepository.findAll().stream()
                 .map(p -> new PermisoResponseDTO(p.getIdPermiso(), p.getNombre()))
                 .toList();
@@ -136,7 +136,7 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @Transactional
     public PermisoResponseDTO crearPermiso(PermisoRequestDTO dto) {
-        log.info("[SERVICE] Creando permiso {}", dto.getNombre());
+        log.info("[AUDIT] Creando permiso {}", dto.getNombre());
         if (permisoRepository.findByNombre(dto.getNombre()).isPresent()) {
             throw new IllegalStateException("El permiso ya existe");
         }
@@ -147,7 +147,7 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     @Transactional
     public void eliminarPermiso(Long idPermiso) {
-        log.info("[SERVICE] Eliminando permiso id={}", idPermiso);
+        log.info("[AUDIT] Eliminando permiso id={}", idPermiso);
         permisoRepository.delete(permisoRepository.findById(idPermiso)
                 .orElseThrow(() -> new IllegalArgumentException("Permiso no encontrado")));
     }

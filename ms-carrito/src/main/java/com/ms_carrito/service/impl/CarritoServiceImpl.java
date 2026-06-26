@@ -13,10 +13,12 @@ import com.ms_carrito.repository.ItemCarritoRepository;
 import com.ms_carrito.service.CarritoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -29,99 +31,71 @@ public class CarritoServiceImpl implements CarritoService {
     private final StockClient           stockClient;
     private final CatalogoClient        catalogoClient;
 
-    // OBTENER O CREAR
     @Override
     @Transactional
     public CarritoDTO obtenerOCrearCarrito(Long idUsuario) {
-        log.info("[SERVICE] Obteniendo carrito para usuario ID: {}", idUsuario);
-
+        log.info("[AUDIT idUsuario={}] Obteniendo carrito", idUsuario);
         Carrito carrito = carritoRepository.findByIdUsuario(idUsuario)
                 .orElseGet(() -> crearNuevoCarrito(idUsuario));
-
-        log.info("[SERVICE] Carrito ID {} retornado para usuario {}",
-                carrito.getIdCarrito(), idUsuario);
-
+        log.info("[AUDIT idUsuario={}] Carrito ID {} retornado", idUsuario, carrito.getIdCarrito());
         return mapToResponse(carrito);
     }
 
-    // AGREGAR ITEM
     @Override
     @Transactional
     public CarritoDTO agregarItem(Long idUsuario, AgregarItemDTO dto) {
-        log.info("[SERVICE] Agregando variante {} (x{}) al carrito del usuario {}",
-                dto.getIdVariante(), dto.getCantidad(), idUsuario);
-
+        log.info("[AUDIT idUsuario={}] Agregando variante {} x{}", idUsuario, dto.getIdVariante(), dto.getCantidad());
         validarStockDisponible(dto.getIdVariante(), dto.getCantidad());
         BigDecimal precio = obtenerPrecioVariante(dto.getIdVariante());
-
         Carrito carrito = carritoRepository.findByIdUsuario(idUsuario)
                 .orElseGet(() -> crearNuevoCarrito(idUsuario));
-
         agregarOActualizarItem(carrito, dto.getIdVariante(), dto.getCantidad(), precio);
-
         Carrito actualizado = obtenerCarritoPorUsuario(idUsuario);
-
-        log.info("[SERVICE] Item agregado exitosamente al carrito del usuario {}", idUsuario);
+        log.info("[AUDIT idUsuario={}] Item agregado exitosamente", idUsuario);
         return mapToResponse(actualizado);
     }
 
-    // ACTUALIZAR CANTIDAD
     @Override
     @Transactional
     public CarritoDTO actualizarCantidad(Long idUsuario, Long idItem, ActualizarCantidadDTO dto) {
-        log.info("[SERVICE] Actualizando item {} a cantidad {} para usuario {}",
-                idItem, dto.getCantidad(), idUsuario);
-
+        log.info("[AUDIT idUsuario={}] Actualizando item {} cantidad → {}", idUsuario, idItem, dto.getCantidad());
         Carrito carrito = obtenerCarritoPorUsuario(idUsuario);
         ItemCarrito item = obtenerItemDelCarrito(idItem, carrito.getIdCarrito());
-
         validarStockDisponible(item.getIdVariante(), dto.getCantidad());
-
         Integer cantidadAnterior = item.getCantidad();
         item.setCantidad(dto.getCantidad());
         itemCarritoRepository.save(item);
-
-        log.info("[SERVICE] Item {} actualizado. Anterior: {}, Nueva: {}",
-                idItem, cantidadAnterior, dto.getCantidad());
-
+        log.info("[AUDIT idUsuario={}] Item {} actualizado: {} → {}", idUsuario, idItem, cantidadAnterior, dto.getCantidad());
         return mapToResponse(obtenerCarritoPorUsuario(idUsuario));
     }
 
-    // ELIMINAR ITEM
     @Override
     @Transactional
     public CarritoDTO eliminarItem(Long idUsuario, Long idItem) {
-        log.info("[SERVICE] Eliminando item {} del carrito del usuario {}", idItem, idUsuario);
-
+        log.info("[AUDIT idUsuario={}] Eliminando item {}", idUsuario, idItem);
         Carrito carrito = obtenerCarritoPorUsuario(idUsuario);
         ItemCarrito item = obtenerItemDelCarrito(idItem, carrito.getIdCarrito());
-
         itemCarritoRepository.deleteById(item.getIdItem());
         itemCarritoRepository.flush();
 
-        log.info("[SERVICE] Item {} eliminado exitosamente del carrito del usuario {}",
-                idItem, idUsuario);
+        log.info("[AUDIT idUsuario={}] Item {} eliminado exitosamente del carrito", idUsuario, idItem);
 
         return mapToResponse(obtenerCarritoPorUsuario(idUsuario));
     }
 
 
-    // VACIAR CARRITO
     @Override
     @Transactional
     public void vaciarCarrito(Long idUsuario) {
-        log.info("[SERVICE] Vaciando carrito del usuario {}", idUsuario);
-
+        log.info("[AUDIT idUsuario={}] Vaciando carrito completo", idUsuario);
         Carrito carrito = obtenerCarritoPorUsuario(idUsuario);
         carrito.getItems().clear();
         carritoRepository.save(carrito);
-
-        log.info("[SERVICE] Carrito {} vaciado exitosamente", carrito.getIdCarrito());
+        log.info("[AUDIT idUsuario={}] Carrito {} vaciado", idUsuario, carrito.getIdCarrito());
     }
 
-    // MÉTODOS AUXILIARES PRIVADOS
     private Carrito crearNuevoCarrito(Long idUsuario) {
-        log.info("[SERVICE] Creando nuevo carrito para usuario {}", idUsuario);
+        log.info("[AUDIT idUsuario={}] Creando nuevo carrito", idUsuario);
         Carrito nuevo = new Carrito();
         nuevo.setIdUsuario(idUsuario);
         return carritoRepository.save(nuevo);
@@ -130,7 +104,7 @@ public class CarritoServiceImpl implements CarritoService {
     private Carrito obtenerCarritoPorUsuario(Long idUsuario) {
         return carritoRepository.findByIdUsuario(idUsuario)
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] Carrito no encontrado para usuario {}", idUsuario);
+                    log.warn("[AUDIT idUsuario={}] Carrito no encontrado", idUsuario);
                     return new CarritoNotFoundException(idUsuario);
                 });
     }
@@ -139,7 +113,7 @@ public class CarritoServiceImpl implements CarritoService {
         return itemCarritoRepository.findById(idItem)
                 .filter(i -> i.getCarrito().getIdCarrito().equals(idCarrito))
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] Item {} no encontrado en carrito {}", idItem, idCarrito);
+                    log.warn("[AUDIT] Item {} no encontrado en carrito {}", idItem, idCarrito);
                     return new ItemNotFoundException(idItem);
                 });
     }
@@ -148,21 +122,19 @@ public class CarritoServiceImpl implements CarritoService {
         try {
             StockResponseDTO stock = stockClient.consultarStock(idVariante);
             if (stock.getCantidadDisponible() < cantidad) {
-                log.warn("[SERVICE] Stock insuficiente para variante {}. Disponible: {}, Solicitado: {}",
+                log.warn("[AUDIT] Stock insuficiente variante {}. Disp: {}, Req: {}",
                         idVariante, stock.getCantidadDisponible(), cantidad);
                 throw new StockNoDisponibleException(idVariante, cantidad);
             }
-            log.info("[SERVICE] Stock OK para variante {}. Disponible: {}", idVariante, stock.getCantidadDisponible());
-
+            log.info("[AUDIT] Stock OK variante {}: {}", idVariante, stock.getCantidadDisponible());
         } catch (StockNoDisponibleException e) {
             throw e;
-
         } catch (feign.FeignException.NotFound e) {
-            log.warn("[SERVICE] Variante {} sin registro en ms-stock. Asumiendo disponible.", idVariante);
-
+            log.warn("[AUDIT] Variante {} sin registro de stock. Cancelando operacion.", idVariante);
+            throw new StockNoDisponibleException(idVariante, cantidad);
         } catch (feign.FeignException e) {
-            log.warn("[SERVICE] ms-stock no disponible para variante {}: {}. Asumiendo disponible.",
-                    idVariante, e.getMessage());
+            log.warn("[AUDIT] ms-stock no disponible variante {}: {}", idVariante, e.getMessage());
+            throw new RuntimeException("Servicio de stock no disponible. Intenta de nuevo.");
         }
     }
 
@@ -172,17 +144,14 @@ public class CarritoServiceImpl implements CarritoService {
             if (variante.getPrecio() == null) {
                 throw new IllegalStateException("La variante " + idVariante + " no tiene precio en el catalogo.");
             }
-            log.info("[SERVICE] Precio obtenido para variante {}: {}", idVariante, variante.getPrecio());
+            log.info("[AUDIT] Precio variante {}: {}", idVariante, variante.getPrecio());
             return variante.getPrecio();
-
         } catch (feign.FeignException.NotFound e) {
-            log.warn("[SERVICE] Variante {} no encontrada en ms-catalogo (404)", idVariante);
+            log.warn("[AUDIT] Variante {} no encontrada en ms-catalogo", idVariante);
             throw new IllegalStateException(
                     "La variante " + idVariante + " no existe. Crea la variante en ms-catalogo (puerto 8084) primero.");
-
         } catch (feign.FeignException e) {
-            log.error("[SERVICE] Error Feign ms-catalogo variante {}: status={} msg={}",
-                    idVariante, e.status(), e.getMessage());
+            log.error("[AUDIT] Error ms-catalogo variante {}: status={} msg={}", idVariante, e.status(), e.getMessage());
             throw new IllegalStateException(
                     "El catalogo no esta disponible (ms-catalogo:8084). Verifica que este encendido y prueba: "
                     + "GET http://localhost:8084/api/catalogo/variantes/" + idVariante);
@@ -197,16 +166,13 @@ public class CarritoServiceImpl implements CarritoService {
                     existente -> {
                         Integer nuevaCantidad = existente.getCantidad() + cantidad;
                         existente.setCantidad(nuevaCantidad);
-                        existente.setPrecioUnitario(precio);
                         itemCarritoRepository.save(existente);
-                        log.info("[SERVICE] Item existente actualizado. Variante {}, cantidad: {}",
-                                idVariante, nuevaCantidad);
+                        log.info("[AUDIT] Item existente variante {} cantidad ahora {}", idVariante, nuevaCantidad);
                     },
                     () -> {
                         ItemCarrito nuevo = buildItem(carrito, idVariante, cantidad, precio);
                         itemCarritoRepository.save(nuevo);
-                        log.info("[SERVICE] Nuevo item creado. Variante {}, cantidad: {}, precio: {}",
-                                idVariante, cantidad, precio);
+                        log.info("[AUDIT] Nuevo item variante {} x{} precio {}", idVariante, cantidad, precio);
                     }
                 );
     }
@@ -247,5 +213,31 @@ public class CarritoServiceImpl implements CarritoService {
             itemsDTO,
             total
         );
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // LIMPIEZA PROGRAMADA de carritos abandonados (Fix #6)
+    // ─────────────────────────────────────────────────────────
+
+    /**
+     * Ejecuta todas las noches (3:00 AM) la limpieza de carritos
+     * abandonados con mas de 7 dias de antigüedad.
+     */
+    @Scheduled(cron = "0 0 3 * * ?")
+    @Transactional
+    public void limpiarCarritosAbandonados() {
+        LocalDateTime fechaLimite = LocalDateTime.now().minusDays(7);
+        log.info("[AUDIT] Iniciando limpieza de carritos anteriores a {}", fechaLimite);
+
+        List<Carrito> antiguos = carritoRepository.findByCreadoEnBefore(fechaLimite);
+        if (antiguos.isEmpty()) {
+            log.info("[AUDIT] No hay carritos abandonados para limpiar");
+            return;
+        }
+
+        log.info("[AUDIT] Eliminando {} carritos abandonados", antiguos.size());
+        carritoRepository.deleteAll(antiguos);
+        carritoRepository.flush();
+        log.info("[AUDIT] Limpieza completada: {} carritos eliminados", antiguos.size());
     }
 }

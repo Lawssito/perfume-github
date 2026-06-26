@@ -30,14 +30,14 @@ public class EnvioServiceImpl implements EnvioService {
     @Override
     @Transactional
     public EnvioDTO crearEnvio(CrearEnvioDTO dto) {
-        log.info("[SERVICE] Creando envio para pedido ID: {} | Courier: {}",
+        log.info("[AUDIT] Creando envio para pedido ID: {} | Courier: {}",
                 dto.getIdPedido(), dto.getCourier());
 
         validarPedidoSinEnvio(dto.getIdPedido());
 
         Envio guardado = envioRepository.save(buildEnvio(dto));
 
-        log.info("[SERVICE] Envio creado exitosamente. ID: {} | Tracking: {} | Estimado: {}",
+        log.info("[AUDIT] Envio creado exitosamente. ID: {} | Tracking: {} | Estimado: {}",
                 guardado.getIdEnvio(),
                 guardado.getNumeroTracking(),
                 guardado.getEntregaEstimada());
@@ -49,7 +49,7 @@ public class EnvioServiceImpl implements EnvioService {
     @Override
     @Transactional
     public EnvioDTO avanzarEstado(Long idEnvio, AvanzarEstadoDTO dto) {
-        log.info("[SERVICE] Cambiando estado del envio {} a {}", idEnvio, dto.getEstado());
+        log.info("[AUDIT] Cambiando estado del envio {} a {}", idEnvio, dto.getEstado());
 
         Envio envio        = obtenerPorId(idEnvio);
         EstadoEnvio actual = envio.getEstado();
@@ -59,13 +59,13 @@ public class EnvioServiceImpl implements EnvioService {
 
         if (dto.getEstado() == EstadoEnvio.ENTREGADO) {
             envio.setEntregadoEn(LocalDateTime.now());
-            log.info("[SERVICE] Envio {} marcado como ENTREGADO en: {}",
+            log.info("[AUDIT] Envio {} marcado como ENTREGADO en: {}",
                     idEnvio, envio.getEntregadoEn());
         }
 
         Envio actualizado = envioRepository.save(envio);
 
-        log.info("[SERVICE] Estado del envio {} actualizado: {} → {}",
+        log.info("[AUDIT] Estado del envio {} actualizado: {} → {}",
                 idEnvio, actual, dto.getEstado());
 
         return mapToResponse(actualizado);
@@ -75,7 +75,7 @@ public class EnvioServiceImpl implements EnvioService {
     @Override
     @Transactional
     public EnvioDTO cancelarEnvio(Long idEnvio) {
-        log.info("[SERVICE] Cancelando envio ID: {}", idEnvio);
+        log.info("[AUDIT] Cancelando envio ID: {}", idEnvio);
 
         Envio envio            = obtenerPorId(idEnvio);
         EstadoEnvio estadoAnterior = envio.getEstado();
@@ -85,18 +85,18 @@ public class EnvioServiceImpl implements EnvioService {
 
         Envio actualizado = envioRepository.save(envio);
 
-        log.info("[SERVICE] Envio {} cancelado. Estado anterior: {}", idEnvio, estadoAnterior);
+        log.info("[AUDIT] Envio {} cancelado. Estado anterior: {}", idEnvio, estadoAnterior);
         return mapToResponse(actualizado);
     }
 
     // CONSULTAR POR ID
     @Override
     public EnvioDTO consultarPorId(Long idEnvio) {
-        log.info("[SERVICE] Consultando envio ID: {}", idEnvio);
+        log.info("[AUDIT] Consultando envio ID: {}", idEnvio);
 
         Envio envio = obtenerPorId(idEnvio);
 
-        log.info("[SERVICE] Envio {} encontrado. Estado: {} | Tracking: {}",
+        log.info("[AUDIT] Envio {} encontrado. Estado: {} | Tracking: {}",
                 idEnvio, envio.getEstado(), envio.getNumeroTracking());
 
         return mapToResponse(envio);
@@ -105,15 +105,15 @@ public class EnvioServiceImpl implements EnvioService {
     // CONSULTAR POR PEDIDO
     @Override
     public EnvioDTO consultarPorPedido(Long idPedido) {
-        log.info("[SERVICE] Consultando envio del pedido ID: {}", idPedido);
+        log.info("[AUDIT] Consultando envio del pedido ID: {}", idPedido);
 
         Envio envio = envioRepository.findByIdPedido(idPedido)
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] No existe envio para pedido ID {}", idPedido);
+                    log.warn("[AUDIT] No existe envio para pedido ID {}", idPedido);
                     return new EnvioNotFoundException(idPedido);
                 });
 
-        log.info("[SERVICE] Envio encontrado para pedido {}. Estado: {} | Tracking: {}",
+        log.info("[AUDIT] Envio encontrado para pedido {}. Estado: {} | Tracking: {}",
                 idPedido, envio.getEstado(), envio.getNumeroTracking());
 
         return mapToResponse(envio);
@@ -122,22 +122,22 @@ public class EnvioServiceImpl implements EnvioService {
     // LISTAR TODOS
     @Override
     public List<EnvioDTO> listarTodos() {
-        log.info("[SERVICE] Listando todos los envios");
+        log.info("[AUDIT] Listando todos los envios");
 
         List<Envio> envios = envioRepository.findAll();
 
-        log.info("[SERVICE] Total de envios encontrados: {}", envios.size());
+        log.info("[AUDIT] Total de envios encontrados: {}", envios.size());
         return envios.stream().map(this::mapToResponse).toList();
     }
 
     // LISTAR POR ESTADO
     @Override
     public List<EnvioDTO> listarPorEstado(EstadoEnvio estado) {
-        log.info("[SERVICE] Listando envios con estado: {}", estado);
+        log.info("[AUDIT] Listando envios con estado: {}", estado);
 
         List<Envio> envios = envioRepository.findByEstado(estado);
 
-        log.info("[SERVICE] Envios encontrados con estado {}: {}", estado, envios.size());
+        log.info("[AUDIT] Envios encontrados con estado {}: {}", estado, envios.size());
         return envios.stream().map(this::mapToResponse).toList();
     }
 
@@ -145,14 +145,14 @@ public class EnvioServiceImpl implements EnvioService {
     private Envio obtenerPorId(Long idEnvio) {
         return envioRepository.findById(idEnvio)
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] Envio ID {} no encontrado", idEnvio);
+                    log.warn("[AUDIT] Envio ID {} no encontrado", idEnvio);
                     return new EnvioNotFoundException(idEnvio);
                 });
     }
 
     private void validarPedidoSinEnvio(Long idPedido) {
         if (envioRepository.findByIdPedido(idPedido).isPresent()) {
-            log.warn("[SERVICE] Ya existe envio para pedido ID: {}", idPedido);
+            log.warn("[AUDIT] Ya existe envio para pedido ID: {}", idPedido);
             throw new IllegalStateException(
                 "Ya existe un envio registrado para el pedido " + idPedido
             );
@@ -171,7 +171,7 @@ public class EnvioServiceImpl implements EnvioService {
         };
 
         if (!valida) {
-            log.warn("[SERVICE] Transicion invalida: {} → {}", actual, solicitado);
+            log.warn("[AUDIT] Transicion invalida: {} → {}", actual, solicitado);
             throw new TransicionEstadoInvalidaException(actual, solicitado);
         }
     }

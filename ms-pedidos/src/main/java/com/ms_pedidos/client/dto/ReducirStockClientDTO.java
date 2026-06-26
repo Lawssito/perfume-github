@@ -1,4 +1,5 @@
 package com.ms_pedidos.client.dto;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -6,4 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class ReducirStockClientDTO {
     private Integer cantidad;
+    private String idempotencyKey;
 }

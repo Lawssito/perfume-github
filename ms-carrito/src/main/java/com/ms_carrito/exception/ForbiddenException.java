@@ -1,0 +1,7 @@
+package com.ms_carrito.exception;
+
+public class ForbiddenException extends RuntimeException {
+    public ForbiddenException(String message) {
+        super(message);
+    }
+}

@@ -30,7 +30,7 @@ public class PagoServiceImpl implements PagoService {
     @Override
     @Transactional
     public PagoDTO crearPago(CrearPagoDTO dto) {
-        log.info("[SERVICE] Creando pago para pedido ID: {} | Monto: {} | Metodo: {}",
+        log.info("[AUDIT] Creando pago para pedido ID: {} | Monto: {} | Metodo: {}",
                 dto.getIdPedido(), dto.getMontoTotal(), dto.getMetodoPago());
 
         validarMontoPorPagar(dto.getMontoTotal());
@@ -38,7 +38,7 @@ public class PagoServiceImpl implements PagoService {
 
         Pago guardado = pagoRepository.save(buildPago(dto));
 
-        log.info("[SERVICE] Pago creado exitosamente. ID: {} | Referencia: {} | Estado: {}",
+        log.info("[AUDIT] Pago creado exitosamente. ID: {} | Referencia: {} | Estado: {}",
                 guardado.getIdTransaccion(),
                 guardado.getReferenciaExterna(),
                 guardado.getEstado());
@@ -50,7 +50,7 @@ public class PagoServiceImpl implements PagoService {
     @Override
     @Transactional
     public PagoDTO procesarPago(Long idTransaccion) {
-        log.info("[SERVICE] Procesando pago ID: {}", idTransaccion);
+        log.info("[AUDIT] Procesando pago ID: {}", idTransaccion);
 
         Pago pago = obtenerPorId(idTransaccion);
         validarMontoPorPagar(pago.getMontoTotal());
@@ -62,7 +62,7 @@ public class PagoServiceImpl implements PagoService {
 
         Pago actualizado = pagoRepository.save(pago);
 
-        log.info("[SERVICE] Pago {} procesado. Resultado: {} | Procesado en: {}",
+        log.info("[AUDIT] Pago {} procesado. Resultado: {} | Procesado en: {}",
                 idTransaccion, nuevoEstado, actualizado.getProcesadoEn());
 
         return mapToResponse(actualizado);
@@ -72,7 +72,7 @@ public class PagoServiceImpl implements PagoService {
     @Override
     @Transactional
     public PagoDTO anularPago(Long idTransaccion) {
-        log.info("[SERVICE] Anulando pago ID: {}", idTransaccion);
+        log.info("[AUDIT] Anulando pago ID: {}", idTransaccion);
 
         Pago pago = obtenerPorId(idTransaccion);
         validarEstadoPendiente(pago, EstadoPago.ANULADO);
@@ -82,18 +82,18 @@ public class PagoServiceImpl implements PagoService {
 
         Pago actualizado = pagoRepository.save(pago);
 
-        log.info("[SERVICE] Pago {} anulado exitosamente", idTransaccion);
+        log.info("[AUDIT] Pago {} anulado exitosamente", idTransaccion);
         return mapToResponse(actualizado);
     }
 
     // CONSULTAR POR ID
     @Override
     public PagoDTO consultarPorId(Long idTransaccion) {
-        log.info("[SERVICE] Consultando pago ID: {}", idTransaccion);
+        log.info("[AUDIT] Consultando pago ID: {}", idTransaccion);
 
         Pago pago = obtenerPorId(idTransaccion);
 
-        log.info("[SERVICE] Pago encontrado. ID: {} | Estado: {} | Pedido: {}",
+        log.info("[AUDIT] Pago encontrado. ID: {} | Estado: {} | Pedido: {}",
                 idTransaccion, pago.getEstado(), pago.getIdPedido());
 
         return mapToResponse(pago);
@@ -102,15 +102,15 @@ public class PagoServiceImpl implements PagoService {
     // CONSULTAR POR PEDIDO
     @Override
     public PagoDTO consultarPorPedido(Long idPedido) {
-        log.info("[SERVICE] Consultando pago del pedido ID: {}", idPedido);
+        log.info("[AUDIT] Consultando pago del pedido ID: {}", idPedido);
 
         Pago pago = pagoRepository.findByIdPedido(idPedido)
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] No existe pago para pedido ID {}", idPedido);
+                    log.warn("[AUDIT] No existe pago para pedido ID {}", idPedido);
                     return new PagoNotFoundException(idPedido);
                 });
 
-        log.info("[SERVICE] Pago encontrado para pedido {}. Estado: {}",
+        log.info("[AUDIT] Pago encontrado para pedido {}. Estado: {}",
                 idPedido, pago.getEstado());
 
         return mapToResponse(pago);
@@ -119,40 +119,66 @@ public class PagoServiceImpl implements PagoService {
     // LISTAR TODOS
     @Override
     public List<PagoDTO> listarTodos() {
-        log.info("[SERVICE] Listando todos los pagos");
+        log.info("[AUDIT] Listando todos los pagos");
 
         List<Pago> pagos = pagoRepository.findAll();
 
-        log.info("[SERVICE] Total de pagos encontrados: {}", pagos.size());
+        log.info("[AUDIT] Total de pagos encontrados: {}", pagos.size());
         return pagos.stream().map(this::mapToResponse).toList();
+    }
+
+    // REINTENTAR
+    @Override
+    @Transactional
+    public PagoDTO reintentarPago(Long idTransaccion) {
+        log.info("[AUDIT] Reintentando pago ID: {}", idTransaccion);
+
+        Pago pago = obtenerPorId(idTransaccion);
+
+        if (pago.getEstado() != EstadoPago.RECHAZADO) {
+            log.warn("[AUDIT] Pago {} no esta RECHAZADO. Estado actual: {}", idTransaccion, pago.getEstado());
+            throw new TransicionEstadoInvalidaException(pago.getEstado(), EstadoPago.PENDIENTE);
+        }
+
+        // Volver a estado PENDIENTE y reprocesar
+        pago.setEstado(EstadoPago.PENDIENTE);
+        pagoRepository.save(pago);
+
+        EstadoPago nuevoEstado = simularResultadoBancario();
+        pago.setEstado(nuevoEstado);
+        pago.setProcesadoEn(LocalDateTime.now());
+        Pago actualizado = pagoRepository.save(pago);
+
+        log.info("[AUDIT] Reintento de pago {} procesado. Resultado: {}", idTransaccion, nuevoEstado);
+        return mapToResponse(actualizado);
     }
 
     // MÉTODOS AUXILIARES PRIVADOS
     private Pago obtenerPorId(Long idTransaccion) {
         return pagoRepository.findById(idTransaccion)
                 .orElseThrow(() -> {
-                    log.warn("[SERVICE] Pago ID {} no encontrado", idTransaccion);
+                    log.warn("[AUDIT] Pago ID {} no encontrado", idTransaccion);
                     return new PagoNotFoundException(idTransaccion);
                 });
     }
 
     private void validarMontoPorPagar(BigDecimal montoTotal) {
         if (montoTotal == null || montoTotal.compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("[SERVICE] Intento de pago sin monto por pagar. Monto recibido: {}", montoTotal);
+            log.warn("[AUDIT] Intento de pago sin monto por pagar. Monto recibido: {}", montoTotal);
             throw new NoHayMontoPorPagarException(montoTotal);
         }
     }
 
     private void validarPedidoSinPago(Long idPedido) {
         if (pagoRepository.findByIdPedido(idPedido).isPresent()) {
-            log.warn("[SERVICE] Ya existe pago para pedido ID: {}", idPedido);
+            log.warn("[AUDIT] Ya existe pago para pedido ID: {}", idPedido);
             throw new IllegalStateException("Ya existe un pago registrado para el pedido " + idPedido);
         }
     }
 
     private void validarEstadoPendiente(Pago pago, EstadoPago destino) {
         if (pago.getEstado() != EstadoPago.PENDIENTE) {
-            log.warn("[SERVICE] Pago {} no esta en estado PENDIENTE. Estado actual: {}",
+            log.warn("[AUDIT] Pago {} no esta en estado PENDIENTE. Estado actual: {}",
                     pago.getIdTransaccion(), pago.getEstado());
             throw new TransicionEstadoInvalidaException(pago.getEstado(), destino);
         }
@@ -162,7 +188,7 @@ public class PagoServiceImpl implements PagoService {
         // 80% COMPLETADO, 20% RECHAZADO
         boolean exitoso = Math.random() < 0.8;
         EstadoPago resultado = exitoso ? EstadoPago.COMPLETADO : EstadoPago.RECHAZADO;
-        log.info("[SERVICE] Simulacion bancaria: {}", resultado);
+        log.info("[AUDIT] Simulacion bancaria: {}", resultado);
         return resultado;
     }
 

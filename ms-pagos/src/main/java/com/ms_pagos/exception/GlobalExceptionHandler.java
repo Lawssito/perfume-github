@@ -1,6 +1,7 @@
 package com.ms_pagos.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.ms_pagos.exception.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -85,6 +86,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, "NO_AMOUNT_TO_PAY", ex.getMessage(), request);
     }
 
+
+    // ── Acceso denegado ──
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(
+            ForbiddenException ex,
+            HttpServletRequest request) {
+
+        log.warn("[HANDLER] Acceso denegado en {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(), request);
+    }
 
     // ── Estado de negocio inválido ──
     @ExceptionHandler(IllegalStateException.class)

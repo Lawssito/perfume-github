@@ -1,6 +1,7 @@
 package com.ms_stock.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.ms_stock.exception.ForbiddenException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -78,6 +79,17 @@ public class GlobalExceptionHandler {
 
         return buildResponse(HttpStatus.CONFLICT, "DATA_INTEGRITY_VIOLATION",
                 "Ya existe un registro con esos datos", request);
+    }
+
+    // ── Acceso denegado ─────────────────────────────────────
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(
+            ForbiddenException ex,
+            HttpServletRequest request) {
+
+        log.warn("[HANDLER] Acceso denegado en {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(), request);
     }
 
     // ── Estado de negocio inválido ───────────────────────────

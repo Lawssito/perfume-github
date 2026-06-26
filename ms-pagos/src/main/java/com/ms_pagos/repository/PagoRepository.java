@@ -13,6 +13,4 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     Optional<Pago> findByIdPedido(Long idPedido);
 
-    List<Pago> findByEstado(com.ms_pagos.model.EstadoPago estado);
-
 }

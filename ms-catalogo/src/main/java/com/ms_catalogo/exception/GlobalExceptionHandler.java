@@ -37,6 +37,18 @@ public class GlobalExceptionHandler {
     }
 
     // 2. Atrapa errores de lógica de negocio (ej: cuando no se encuentra una Marca o Categoría)
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> manejarForbidden(ForbiddenException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Acceso denegado",
+                List.of(ex.getMessage())
+        );
+        log.warn("Acceso denegado: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> manejarErroresDeNegocio(RuntimeException ex) {
         ErrorResponse errorResponse = new ErrorResponse(

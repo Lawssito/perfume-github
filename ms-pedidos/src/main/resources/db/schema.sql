@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS pedidos (
     estado VARCHAR(30) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    direccion_entrega VARCHAR(300) DEFAULT NULL,
+    courier VARCHAR(100) DEFAULT NULL,
     PRIMARY KEY (id_pedido),
     KEY idx_pedidos_usuario (id_usuario),
     CONSTRAINT chk_pedido_total CHECK (total >= 0)

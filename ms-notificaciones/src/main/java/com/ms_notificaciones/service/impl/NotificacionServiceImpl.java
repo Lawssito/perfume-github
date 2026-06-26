@@ -22,7 +22,7 @@ public class NotificacionServiceImpl implements NotificacionService {
     @Override
     @Transactional
     public NotificacionResponseDTO procesarEventoYEnviar(EventoNotificacionDTO evento) {
-        log.info("[SERVICE] Procesando evento [{}] para usuario {}", evento.getTipoEvento(), evento.getIdUsuario());
+        log.info("[AUDIT] Procesando evento [{}] para usuario {}", evento.getTipoEvento(), evento.getIdUsuario());
 
         Notificacion notificacion = Notificacion.builder()
                 .idUsuario(evento.getIdUsuario())
@@ -31,15 +31,15 @@ public class NotificacionServiceImpl implements NotificacionService {
                 .build();
 
         notificacion = notificacionRepository.save(notificacion);
-        log.info("[SERVICE] Notificacion registrada id={} estado=PENDIENTE", notificacion.getIdNotificacion());
+        log.info("[AUDIT] Notificacion registrada id={} estado=PENDIENTE", notificacion.getIdNotificacion());
 
         try {
             enviarEmailSimulado(evento);
             notificacion.setEstadoEnvio("ENVIADO");
-            log.info("[SERVICE] Email enviado para notificacion id={}", notificacion.getIdNotificacion());
+            log.info("[AUDIT] Email enviado para notificacion id={}", notificacion.getIdNotificacion());
         } catch (Exception e) {
             notificacion.setEstadoEnvio("FALLIDO");
-            log.error("[SERVICE] Fallo envio notificacion id={}: {}", notificacion.getIdNotificacion(), e.getMessage());
+            log.error("[AUDIT] Fallo envio notificacion id={}: {}", notificacion.getIdNotificacion(), e.getMessage());
         }
 
         return mapToResponse(notificacionRepository.save(notificacion));
@@ -48,21 +48,21 @@ public class NotificacionServiceImpl implements NotificacionService {
     @Override
     @Transactional(readOnly = true)
     public List<NotificacionResponseDTO> listarTodas() {
-        log.info("[SERVICE] Listando todas las notificaciones");
+        log.info("[AUDIT] Listando todas las notificaciones");
         return notificacionRepository.findAll().stream().map(this::mapToResponse).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public NotificacionResponseDTO obtenerPorId(Long id) {
-        log.info("[SERVICE] Consultando notificacion id={}", id);
+        log.info("[AUDIT] Consultando notificacion id={}", id);
         return mapToResponse(obtenerEntidad(id));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<NotificacionResponseDTO> listarPorUsuario(Long idUsuario) {
-        log.info("[SERVICE] Listando notificaciones de usuario {}", idUsuario);
+        log.info("[AUDIT] Listando notificaciones de usuario {}", idUsuario);
         return notificacionRepository.findByIdUsuarioOrderByFechaDesc(idUsuario).stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -71,7 +71,7 @@ public class NotificacionServiceImpl implements NotificacionService {
     @Override
     @Transactional
     public void eliminar(Long id) {
-        log.info("[SERVICE] Eliminando notificacion id={}", id);
+        log.info("[AUDIT] Eliminando notificacion id={}", id);
         notificacionRepository.delete(obtenerEntidad(id));
     }
 
@@ -81,9 +81,9 @@ public class NotificacionServiceImpl implements NotificacionService {
     }
 
     private void enviarEmailSimulado(EventoNotificacionDTO evento) throws InterruptedException {
-        log.info("[SERVICE] Conectando con servidor SMTP simulado...");
+        log.info("[AUDIT] Conectando con servidor SMTP simulado...");
         Thread.sleep(300);
-        log.info("[SERVICE] Correo enviado a usuario {}: {}", evento.getIdUsuario(), evento.getMensaje());
+        log.info("[AUDIT] Correo enviado a usuario {}: {}", evento.getIdUsuario(), evento.getMensaje());
     }
 
     private NotificacionResponseDTO mapToResponse(Notificacion notificacion) {

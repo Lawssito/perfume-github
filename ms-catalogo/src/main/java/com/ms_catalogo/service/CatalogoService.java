@@ -38,4 +38,13 @@ public interface CatalogoService {
     List<CategoriaResponseDTO> listarCategorias();
 
     CategoriaResponseDTO crearCategoria(CategoriaDTO dto);
+
+    // Búsqueda
+    List<PerfumeResponseDTO> buscarPerfumes(String termino);
+
+    List<PerfumeResponseDTO> listarPorMarca(Long idMarca);
+
+    List<PerfumeResponseDTO> listarPorCategoria(Long idCategoria);
+
+    List<PerfumeResponseDTO> listarPorNombre(String nombre);
 }

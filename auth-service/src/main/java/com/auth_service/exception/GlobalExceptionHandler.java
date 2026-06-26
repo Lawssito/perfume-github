@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> manejarErroresDeNegocio(RuntimeException ex) {
         
         // Si el error es por credenciales o cuenta inactiva, lanzamos un 401 Unauthorized
-        if (ex.getMessage().equals("Credenciales inválidas") || ex.getMessage().equals("Cuenta inactiva")) {
+        if (ex.getMessage().equals("Credenciales invalidas") || ex.getMessage().equals("Cuenta inactiva")) {
             ErrorResponse errorResponse = new ErrorResponse(
                     LocalDateTime.now(),
                     HttpStatus.UNAUTHORIZED.value(),

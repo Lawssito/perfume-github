@@ -3,10 +3,14 @@ package com.ms_carrito.controller;
 import com.ms_carrito.dto.*;
 import com.ms_carrito.service.CarritoService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import com.ms_carrito.exception.ForbiddenException;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -17,70 +21,65 @@ public class CarritoController {
 
     private final CarritoService carritoService;
 
-    // GET /api/carrito/{idUsuario}
-    // Obtiene el carrito del usuario. Si no existe, lo crea vacío.
-    @GetMapping("/{idUsuario}")
-    public ResponseEntity<CarritoDTO> obtenerCarrito(
-            @PathVariable Long idUsuario) {
+    private Long getIdUsuarioAutenticado() {
+        HttpServletRequest req = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        String id = req.getHeader("X-User-Id");
+        if (id == null) {
+            throw new ForbiddenException("Usuario no autenticado");
+        }
+        return Long.parseLong(id);
+    }
 
-        log.info("[CONTROLLER] GET /api/carrito/{}", idUsuario);
+    @GetMapping("/mi-carrito")
+    public ResponseEntity<CarritoDTO> obtenerMiCarrito() {
+        Long idUsuario = getIdUsuarioAutenticado();
+        log.info("[AUDIT idUsuario={}] GET /api/carrito/mi-carrito", idUsuario);
         CarritoDTO respuesta = carritoService.obtenerOCrearCarrito(idUsuario);
-        log.info("[CONTROLLER] Carrito retornado con {} items para usuario {}",
-                respuesta.getItems().size(), idUsuario);
+        log.info("[AUDIT idUsuario={}] Carrito con {} items", idUsuario, respuesta.getItems().size());
         return ResponseEntity.ok(respuesta);
     }
 
-    // POST /api/carrito/{idUsuario}/items
-    // Agrega un perfume al carrito o suma cantidad si ya existe
-    @PostMapping("/{idUsuario}/items")
+    @PostMapping("/items")
     public ResponseEntity<CarritoDTO> agregarItem(
-            @PathVariable Long idUsuario,
             @Valid @RequestBody AgregarItemDTO dto) {
 
-        log.info("[CONTROLLER] POST /api/carrito/{}/items - variante: {}, cantidad: {}",
+        Long idUsuario = getIdUsuarioAutenticado();
+        log.info("[AUDIT idUsuario={}] POST item variante={} cantidad={}",
                 idUsuario, dto.getIdVariante(), dto.getCantidad());
         CarritoDTO respuesta = carritoService.agregarItem(idUsuario, dto);
-        log.info("[CONTROLLER] Item agregado. Total del carrito: {}", respuesta.getTotal());
+        log.info("[AUDIT idUsuario={}] Item agregado. Total: {}", idUsuario, respuesta.getTotal());
         return ResponseEntity.ok(respuesta);
     }
 
-    // PUT /api/carrito/{idUsuario}/items/{idItem}
-    // Cambia la cantidad de un item específico
-    @PutMapping("/{idUsuario}/items/{idItem}")
+    @PutMapping("/items/{idItem}")
     public ResponseEntity<CarritoDTO> actualizarCantidad(
-            @PathVariable Long idUsuario,
             @PathVariable Long idItem,
             @Valid @RequestBody ActualizarCantidadDTO dto) {
 
-        log.info("[CONTROLLER] PUT /api/carrito/{}/items/{} - nueva cantidad: {}",
-                idUsuario, idItem, dto.getCantidad());
+        Long idUsuario = getIdUsuarioAutenticado();
+        log.info("[AUDIT idUsuario={}] PUT cantidad item {} → {}", idUsuario, idItem, dto.getCantidad());
         CarritoDTO respuesta = carritoService.actualizarCantidad(idUsuario, idItem, dto);
-        log.info("[CONTROLLER] Cantidad actualizada. Total del carrito: {}", respuesta.getTotal());
+        log.info("[AUDIT idUsuario={}] Cantidad actualizada. Total: {}", idUsuario, respuesta.getTotal());
         return ResponseEntity.ok(respuesta);
     }
 
-    // DELETE /api/carrito/{idUsuario}/items/{idItem}
-    // Elimina un item específico del carrito
-    @DeleteMapping("/{idUsuario}/items/{idItem}")
-    public ResponseEntity<CarritoDTO> eliminarItem(@PathVariable Long idUsuario,
-            @PathVariable Long idItem) {
+    @DeleteMapping("/items/{idItem}")
+    public ResponseEntity<CarritoDTO> eliminarItem(@PathVariable Long idItem) {
 
-        log.info("[CONTROLLER] DELETE /api/carrito/{}/items/{}", idUsuario, idItem);
+        Long idUsuario = getIdUsuarioAutenticado();
+        log.info("[AUDIT idUsuario={}] DELETE item {}", idUsuario, idItem);
         CarritoDTO respuesta = carritoService.eliminarItem(idUsuario, idItem);
-        log.info("[CONTROLLER] Item eliminado. Items restantes: {}", respuesta.getItems().size());
+        log.info("[AUDIT idUsuario={}] Item eliminado. {} restantes", idUsuario, respuesta.getItems().size());
         return ResponseEntity.ok(respuesta);
     }
 
-    // DELETE /api/carrito/{idUsuario}
-    // Vacía el carrito completo (ms-pedidos lo llama al confirmar la compra)
-    @DeleteMapping("/{idUsuario}")
-    public ResponseEntity<Void> vaciarCarrito(@PathVariable Long idUsuario) {
+    @DeleteMapping
+    public ResponseEntity<Void> vaciarCarrito() {
 
-        log.info("[CONTROLLER] DELETE /api/carrito/{} - vaciando carrito completo", idUsuario);
+        Long idUsuario = getIdUsuarioAutenticado();
+        log.info("[AUDIT idUsuario={}] DELETE — vaciando carrito completo", idUsuario);
         carritoService.vaciarCarrito(idUsuario);
-        log.info("[CONTROLLER] Carrito del usuario {} vaciado", idUsuario);
-
-        // 204 No Content → operación exitosa sin cuerpo de respuesta
+        log.info("[AUDIT idUsuario={}] Carrito vaciado", idUsuario);
         return ResponseEntity.noContent().build();
     }
 }

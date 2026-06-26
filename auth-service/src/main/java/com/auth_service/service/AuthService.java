@@ -18,6 +18,8 @@ public interface AuthService {
 
     TokenClaimsResponseDTO validarToken(ValidateTokenRequestDTO request);
 
+    AuthResponseDTO refreshToken(String refreshToken);
+
     List<CredencialResponseDTO> listarCredenciales();
 
     CredencialResponseDTO obtenerPorIdUsuario(Long idUsuario);

@@ -17,7 +17,7 @@ spring:
     defer-datasource-initialization: true
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -36,6 +36,9 @@ logging:
   level:
     root: INFO
     com.user_service: INFO
+
+security:
+  internal-api-key: "${INTERNAL_API_KEY:a1b2c3d4-e5f6-7890-abcd-ef1234567890}"
 
 springdoc:
   swagger-ui:

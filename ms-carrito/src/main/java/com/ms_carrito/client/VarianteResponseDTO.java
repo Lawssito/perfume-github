@@ -14,9 +14,9 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 public class VarianteResponseDTO {
-    private Long       id;
-    private Long       idPerfume;
-    private String     sku;
-    private Integer    ml;
+    private Long idVariante;
+    private Long idPerfume;
+    private String sku;
+    private Integer ml;
     private BigDecimal precio;
 }

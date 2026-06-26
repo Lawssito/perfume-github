@@ -1,6 +1,7 @@
 package com.ms_catalogo.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.*;
 
 @Entity
@@ -22,6 +23,6 @@ public class Variante {
     @Column(nullable = false)
     private Integer ml;
 
-    @Column(nullable = false)
-    private Double precio;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal precio;
 }

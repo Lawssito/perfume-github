@@ -48,6 +48,7 @@ public class GlobalExceptionHandler {
         String msg = ex.getBindingResult().getFieldErrors().stream()
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .collect(Collectors.joining("; "));
+        log.warn("[HANDLER] Error de validación en {}: {}", request.getRequestURI(), msg);
         return ResponseEntity.badRequest().body(new ErrorResponse(LocalDateTime.now(), 400, "VALIDATION_ERROR", msg, request.getRequestURI()));
     }
 
