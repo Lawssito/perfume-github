@@ -4,6 +4,11 @@ import com.ms_pedidos.dto.CrearPedidoDTO;
 import com.ms_pedidos.dto.PedidoDTO;
 import com.ms_pedidos.model.EstadoPedido;
 import com.ms_pedidos.service.PedidoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/pedidos")
 @RequiredArgsConstructor
+@Tag(name = "Pedidos", description = "Gestión de pedidos con flujo completo de pago y envío")
 public class PedidoController {
 
     private final PedidoService pedidoService;
@@ -49,6 +55,11 @@ public class PedidoController {
     }
 
     @PostMapping
+    @Operation(summary = "Crear pedido", description = "Crea un nuevo pedido a partir del carrito del usuario autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Pedido creado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o carrito vacío")
+    })
     public ResponseEntity<PedidoDTO> crearPedido(
             @Valid @RequestBody CrearPedidoDTO dto) {
 
@@ -60,7 +71,12 @@ public class PedidoController {
     }
 
     @PostMapping("/{id}/pagar")
-    public ResponseEntity<PedidoDTO> pagarPedido(@PathVariable Long id) {
+    @Operation(summary = "Pagar pedido", description = "Procesa el pago y confirma un pedido pendiente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago procesado y pedido confirmado"),
+            @ApiResponse(responseCode = "404", description = "Pedido no encontrado")
+    })
+    public ResponseEntity<PedidoDTO> pagarPedido(@Parameter(description = "ID del pedido", example = "1") @PathVariable Long id) {
         PedidoDTO pedido = pedidoService.consultarPorId(id);
         exigirMismoUsuario(pedido.getIdUsuario());
         log.info("[AUDIT pedidoId={}] POST /api/pedidos/{}/pagar — procesando pago y confirmando pedido", id, id);
@@ -70,7 +86,12 @@ public class PedidoController {
     }
 
     @PostMapping("/{id}/confirmar")
-    public ResponseEntity<PedidoDTO> confirmarPedido(@PathVariable Long id) {
+    @Operation(summary = "Confirmar pedido", description = "Confirma un pedido manualmente (flujo legacy)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pedido confirmado"),
+            @ApiResponse(responseCode = "404", description = "Pedido no encontrado")
+    })
+    public ResponseEntity<PedidoDTO> confirmarPedido(@Parameter(description = "ID del pedido", example = "1") @PathVariable Long id) {
         PedidoDTO pedido = pedidoService.consultarPorId(id);
         exigirMismoUsuario(pedido.getIdUsuario());
         log.info("[AUDIT pedidoId={}] POST /api/pedidos/{}/confirmar — confirmando pedido (legacy)", id, id);
@@ -80,6 +101,10 @@ public class PedidoController {
     }
 
     @GetMapping
+    @Operation(summary = "Listar todos los pedidos", description = "Obtiene todos los pedidos del sistema (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de pedidos obtenida")
+    })
     public ResponseEntity<List<PedidoDTO>> listarTodos() {
         exigirAdmin();
         log.info("[AUDIT] GET /api/pedidos — listado admin");
@@ -89,6 +114,10 @@ public class PedidoController {
     }
 
     @GetMapping("/mis-pedidos")
+    @Operation(summary = "Listar mis pedidos", description = "Obtiene los pedidos del usuario autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de pedidos del usuario obtenida")
+    })
     public ResponseEntity<List<PedidoDTO>> listarMisPedidos() {
 
         Long idUsuario = getIdUsuarioAutenticado();
@@ -99,7 +128,12 @@ public class PedidoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PedidoDTO> consultarPorId(@PathVariable Long id) {
+    @Operation(summary = "Consultar pedido por ID", description = "Obtiene los detalles de un pedido específico")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pedido encontrado"),
+            @ApiResponse(responseCode = "404", description = "Pedido no encontrado")
+    })
+    public ResponseEntity<PedidoDTO> consultarPorId(@Parameter(description = "ID del pedido", example = "1") @PathVariable Long id) {
         PedidoDTO pedido = pedidoService.consultarPorId(id);
         exigirMismoUsuario(pedido.getIdUsuario());
         log.info("[AUDIT pedidoId={}] GET /api/pedidos/{}", id, id);
@@ -109,9 +143,14 @@ public class PedidoController {
     }
 
     @PutMapping("/{id}/estado")
+    @Operation(summary = "Actualizar estado de pedido", description = "Actualiza el estado de un pedido (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Estado actualizado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Pedido no encontrado")
+    })
     public ResponseEntity<PedidoDTO> actualizarEstado(
-            @PathVariable Long id,
-            @RequestParam EstadoPedido estado) {
+            @Parameter(description = "ID del pedido", example = "1") @PathVariable Long id,
+            @Parameter(description = "Nuevo estado del pedido", example = "CONFIRMADO") @RequestParam EstadoPedido estado) {
 
         exigirAdmin();
         log.info("[AUDIT pedidoId={}] Cambio estado → {}", id, estado);

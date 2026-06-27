@@ -3,6 +3,11 @@ package com.ms_notificaciones.controller;
 import com.ms_notificaciones.dto.EventoNotificacionDTO;
 import com.ms_notificaciones.dto.NotificacionResponseDTO;
 import com.ms_notificaciones.service.NotificacionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/notificaciones")
 @RequiredArgsConstructor
+@Tag(name = "Notificaciones", description = "Envío y consulta de notificaciones a usuarios")
 public class NotificacionController {
 
     private final NotificacionService notificacionService;
@@ -51,6 +57,11 @@ public class NotificacionController {
     }
 
     @PostMapping("/enviar")
+    @Operation(summary = "Enviar notificación", description = "Procesa un evento y envía una notificación al usuario")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Notificación enviada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
     public ResponseEntity<NotificacionResponseDTO> enviarNotificacion(
             @Valid @RequestBody EventoNotificacionDTO eventoDTO) {
         log.info("[AUDIT] POST /api/notificaciones/enviar usuario={}", eventoDTO.getIdUsuario());
@@ -60,6 +71,10 @@ public class NotificacionController {
     }
 
     @GetMapping
+    @Operation(summary = "Listar todas las notificaciones", description = "Obtiene todas las notificaciones (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de notificaciones obtenida")
+    })
     public ResponseEntity<List<NotificacionResponseDTO>> listarTodas() {
         exigirAdmin();
         log.info("[AUDIT] GET /api/notificaciones");
@@ -67,13 +82,22 @@ public class NotificacionController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<NotificacionResponseDTO> obtenerPorId(@PathVariable Long id) {
+    @Operation(summary = "Obtener notificación por ID", description = "Obtiene los detalles de una notificación (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Notificación encontrada"),
+            @ApiResponse(responseCode = "404", description = "Notificación no encontrada")
+    })
+    public ResponseEntity<NotificacionResponseDTO> obtenerPorId(@Parameter(description = "ID de la notificación", example = "1") @PathVariable Long id) {
         exigirAdmin();
         log.info("[AUDIT] GET /api/notificaciones/{}", id);
         return ResponseEntity.ok(notificacionService.obtenerPorId(id));
     }
 
     @GetMapping("/mis-notificaciones")
+    @Operation(summary = "Listar mis notificaciones", description = "Obtiene las notificaciones del usuario autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Notificaciones del usuario obtenidas")
+    })
     public ResponseEntity<List<NotificacionResponseDTO>> listarMisNotificaciones() {
         Long idUsuario = getIdUsuarioAutenticado();
         log.info("[AUDIT] GET /api/notificaciones/mis-notificaciones usuario={}", idUsuario);
@@ -81,7 +105,12 @@ public class NotificacionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    @Operation(summary = "Eliminar notificación", description = "Elimina una notificación del sistema (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Notificación eliminada exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Notificación no encontrada")
+    })
+    public ResponseEntity<Void> eliminar(@Parameter(description = "ID de la notificación", example = "1") @PathVariable Long id) {
         exigirAdmin();
         log.info("[AUDIT] DELETE /api/notificaciones/{}", id);
         notificacionService.eliminar(id);
