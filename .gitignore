@@ -61,3 +61,7 @@ node_modules/
 *.sqlite3
 data/
 mysql-data/
+
+# ─── Evaluación / Rúbrica ─────────────
+Evaluacion Parcial 3_Estudiante*.md
+Evaluacion Parcial 3_Estudiante*.pdf
