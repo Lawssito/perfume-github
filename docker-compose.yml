@@ -18,5 +18,197 @@ services:
       timeout: 5s
       retries: 5
 
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_auth_service?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_user_service?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  security-service:
+    build:
+      context: .
+      dockerfile: security-service/Dockerfile
+    container_name: security-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_security_service?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ms-catalogo:
+    build:
+      context: .
+      dockerfile: ms-catalogo/Dockerfile
+    container_name: ms-catalogo
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_ms_catalogo?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ms-stock:
+    build:
+      context: .
+      dockerfile: ms-stock/Dockerfile
+    container_name: ms-stock
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_ms_stock?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ms-carrito:
+    build:
+      context: .
+      dockerfile: ms-carrito/Dockerfile
+    container_name: ms-carrito
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_ms_carrito?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ms-pagos:
+    build:
+      context: .
+      dockerfile: ms-pagos/Dockerfile
+    container_name: ms-pagos
+    ports:
+      - "8087:8087"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_ms_pagos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ms-envios:
+    build:
+      context: .
+      dockerfile: ms-envios/Dockerfile
+    container_name: ms-envios
+    ports:
+      - "8088:8088"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_ms_envios?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ms-notificaciones:
+    build:
+      context: .
+      dockerfile: ms-notificaciones/Dockerfile
+    container_name: ms-notificaciones
+    ports:
+      - "8089:8089"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_ms_notificaciones?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ms-pedidos:
+    build:
+      context: .
+      dockerfile: ms-pedidos/Dockerfile
+    container_name: ms-pedidos
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_ms_pedidos?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_started
+
 volumes:
   mysql_data:

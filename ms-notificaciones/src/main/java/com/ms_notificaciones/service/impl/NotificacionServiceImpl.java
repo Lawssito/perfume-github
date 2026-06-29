@@ -18,6 +18,7 @@ import java.util.List;
 public class NotificacionServiceImpl implements NotificacionService {
 
     private final NotificacionRepository notificacionRepository;
+    private final SimuladorEmail simuladorEmail;
 
     @Override
     @Transactional
@@ -34,7 +35,7 @@ public class NotificacionServiceImpl implements NotificacionService {
         log.info("[AUDIT] Notificacion registrada id={} estado=PENDIENTE", notificacion.getIdNotificacion());
 
         try {
-            enviarEmailSimulado(evento);
+            simuladorEmail.enviar(evento);
             notificacion.setEstadoEnvio("ENVIADO");
             log.info("[AUDIT] Email enviado para notificacion id={}", notificacion.getIdNotificacion());
         } catch (Exception e) {
@@ -78,12 +79,6 @@ public class NotificacionServiceImpl implements NotificacionService {
     private Notificacion obtenerEntidad(Long id) {
         return notificacionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Notificacion no encontrada"));
-    }
-
-    private void enviarEmailSimulado(EventoNotificacionDTO evento) throws InterruptedException {
-        log.info("[AUDIT] Conectando con servidor SMTP simulado...");
-        Thread.sleep(300);
-        log.info("[AUDIT] Correo enviado a usuario {}: {}", evento.getIdUsuario(), evento.getMensaje());
     }
 
     private NotificacionResponseDTO mapToResponse(Notificacion notificacion) {

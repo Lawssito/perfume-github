@@ -143,7 +143,7 @@ Content-Type: application/json
 }
 ```
 
-**Respuesta esperada — `200 OK` (token con rol ADMIN):**
+**Respuesta esperada — `200 OK`  (token con rol ADMIN):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",

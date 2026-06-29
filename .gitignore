@@ -37,8 +37,8 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 
 # ─── Ejecutables / instaladores ──────
-*.bat
-*.sh
+*.exe
+*.msi
 *.exe
 *.msi
 *.dmg

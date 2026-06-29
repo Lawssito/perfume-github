@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.cloud.openfeign.FeignClient;
 
-@FeignClient(name = "ms-carrito")
+@FeignClient(name = "ms-carrito", fallbackFactory = CarritoClientFallbackFactory.class)
 public interface CarritoClient {
 
     @GetMapping("/api/carrito/mi-carrito")

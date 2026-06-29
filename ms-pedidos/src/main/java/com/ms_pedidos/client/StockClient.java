@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 // Eliminado fallbackFactory: las operaciones de escritura deben fallar fuerte
 // en lugar de devolver datos falsos (Fix #3)
-@FeignClient(name = "ms-stock")
+@FeignClient(name = "ms-stock", fallbackFactory = StockClientFallbackFactory.class)
 public interface StockClient {
 
     @GetMapping("/api/stock/{idVariante}")

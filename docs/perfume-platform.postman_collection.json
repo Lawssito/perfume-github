@@ -1,0 +1,1018 @@
+{
+	"info": {
+		"name": "Perfume Platform API",
+		"description": "Colección completa de endpoints para la plataforma de perfumes con microservicios.\n\nBase URL: http://localhost:8080 (API Gateway)\n\nAutenticación:\n1. POST /api/auth/login → obtener JWT token\n2. Usar token en header Authorization: Bearer <token>",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Auth Service",
+			"description": "Endpoints de autenticación y credenciales.\nGateway: /api/auth/* → /api/v1/auth/*",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@perfume.com\",\n  \"password\": \"123456\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Crear Credencial",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"usuario@test.com\",\n  \"password\": \"123456\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/credenciales",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "credenciales"]
+						}
+					}
+				},
+				{
+					"name": "Listar Credenciales",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/credenciales",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "credenciales"]
+						}
+					}
+				},
+				{
+					"name": "Obtener Credencial por Usuario",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/credenciales/usuario/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "credenciales", "usuario", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Estado Cuenta",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"activo\": false\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/credenciales/usuario/1/estado",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "credenciales", "usuario", "1", "estado"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Credencial",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/credenciales/usuario/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "credenciales", "usuario", "1"]
+						}
+					}
+				},
+				{
+					"name": "Validate Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accessToken\": \"token-aqui\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/validate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "validate"]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"refresh-token-aqui\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "refresh"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "User Service",
+			"description": "Endpoints de gestión de usuarios.",
+			"item": [
+				{
+					"name": "Registrar Usuario",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Juan Perez\",\n  \"email\": \"juan@perfume.com\",\n  \"password\": \"123456\",\n  \"telefono\": \"+56912345678\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Listar Usuarios",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Obtener Usuario por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Usuario",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Juan Actualizado\",\n  \"telefono\": \"+56987654321\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios", "1"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Usuario",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios", "1"]
+						}
+					}
+				},
+				{
+					"name": "Agregar Dirección",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-User-Id", "value": "1" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"calle\": \"Av. Principal 123\",\n  \"ciudad\": \"Santiago\",\n  \"region\": \"Metropolitana\",\n  \"codigoPostal\": \"7500000\",\n  \"pais\": \"Chile\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios/1/direcciones",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios", "1", "direcciones"]
+						}
+					}
+				},
+				{
+					"name": "Listar Direcciones",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios/1/direcciones",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios", "1", "direcciones"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Dirección",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios/1/direcciones/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuarios", "1", "direcciones", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Security Service",
+			"description": "Endpoints de roles, permisos y control de acceso.",
+			"item": [
+				{
+					"name": "Asignar Rol",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuario\": 1,\n  \"rol\": \"ADMIN\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuario-roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuario-roles"]
+						}
+					}
+				},
+				{
+					"name": "Obtener Roles por Usuario",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuario-roles/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuario-roles", "1"]
+						}
+					}
+				},
+				{
+					"name": "Revocar Rol",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuario-roles/1/ADMIN",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "usuario-roles", "1", "ADMIN"]
+						}
+					}
+				},
+				{
+					"name": "Validar Permiso",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuario\": 1,\n  \"permiso\": \"ACCESO_ADMIN\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/security/validar-permiso",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "validar-permiso"]
+						}
+					}
+				},
+				{
+					"name": "Listar Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/security/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "roles"]
+						}
+					}
+				},
+				{
+					"name": "Crear Rol",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"GERENTE\",\n  \"descripcion\": \"Rol de gerente\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/security/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "roles"]
+						}
+					}
+				},
+				{
+					"name": "Obtener Rol por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/security/roles/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "roles", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Rol",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"SUPERVISOR\",\n  \"descripcion\": \"Rol de supervisor\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/security/roles/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "roles", "1"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Rol",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/security/roles/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "roles", "1"]
+						}
+					}
+				},
+				{
+					"name": "Listar Permisos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/security/permisos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "permisos"]
+						}
+					}
+				},
+				{
+					"name": "Crear Permiso",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"ACCESO_INFORMES\",\n  \"descripcion\": \"Acceso a informes\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/security/permisos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "permisos"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Permiso",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/security/permisos/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "security", "permisos", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Catálogo",
+			"description": "Endpoints del catálogo de perfumes.",
+			"item": [
+				{
+					"name": "Obtener Catálogo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/productos", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "productos"] }
+					}
+				},
+				{
+					"name": "Obtener Perfume por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/perfumes/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "perfumes", "1"] }
+					}
+				},
+				{
+					"name": "Crear Perfume",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Perfume Ejemplo\",\n  \"descripcion\": \"Descripción del perfume\",\n  \"precioBase\": 29990,\n  \"idMarca\": 1,\n  \"idCategoria\": 1,\n  \"imagenUrl\": \"https://ejemplo.com/perfume.jpg\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/catalogo/perfumes", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "perfumes"] }
+					}
+				},
+				{
+					"name": "Actualizar Perfume",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Perfume Actualizado\",\n  \"precioBase\": 34990\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/catalogo/perfumes/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "perfumes", "1"] }
+					}
+				},
+				{
+					"name": "Eliminar Perfume",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/perfumes/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "perfumes", "1"] }
+					}
+				},
+				{
+					"name": "Obtener Variante",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/variantes/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "variantes", "1"] }
+					}
+				},
+				{
+					"name": "Agregar Variante",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"50ml\",\n  \"precioAdicional\": 5000,\n  \"stock\": 100\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/catalogo/perfumes/1/variantes", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "perfumes", "1", "variantes"] }
+					}
+				},
+				{
+					"name": "Actualizar Variante",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"100ml\",\n  \"precioAdicional\": 10000\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/catalogo/variantes/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "variantes", "1"] }
+					}
+				},
+				{
+					"name": "Eliminar Variante",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/variantes/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "variantes", "1"] }
+					}
+				},
+				{
+					"name": "Buscar Perfumes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/buscar/rosas", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "buscar", "rosas"] }
+					}
+				},
+				{
+					"name": "Por Marca",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/productos/marca/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "productos", "marca", "1"] }
+					}
+				},
+				{
+					"name": "Por Categoría",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/productos/categoria/1", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "productos", "categoria", "1"] }
+					}
+				},
+				{
+					"name": "Listar Marcas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/marcas", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "marcas"] }
+					}
+				},
+				{
+					"name": "Crear Marca",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Nueva Marca\",\n  \"descripcion\": \"Descripción de la marca\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/catalogo/marcas", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "marcas"] }
+					}
+				},
+				{
+					"name": "Listar Categorías",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/catalogo/categorias", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "categorias"] }
+					}
+				},
+				{
+					"name": "Crear Categoría",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Nueva Categoria\",\n  \"descripcion\": \"Descripcion de la categoria\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/catalogo/categorias", "host": ["{{baseUrl}}"], "path": ["api", "catalogo", "categorias"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Carrito",
+			"description": "Endpoints del carrito de compras.",
+			"item": [
+				{
+					"name": "Obtener Mi Carrito",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"url": { "raw": "{{baseUrl}}/api/carrito/mi-carrito", "host": ["{{baseUrl}}"], "path": ["api", "carrito", "mi-carrito"] }
+					}
+				},
+				{
+					"name": "Agregar Item",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idVariante\": 1,\n  \"cantidad\": 2\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/carrito/items", "host": ["{{baseUrl}}"], "path": ["api", "carrito", "items"] }
+					}
+				},
+				{
+					"name": "Actualizar Cantidad",
+					"request": {
+						"method": "PUT",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cantidad\": 5\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/carrito/items/1", "host": ["{{baseUrl}}"], "path": ["api", "carrito", "items", "1"] }
+					}
+				},
+				{
+					"name": "Eliminar Item",
+					"request": {
+						"method": "DELETE",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"url": { "raw": "{{baseUrl}}/api/carrito/items/1", "host": ["{{baseUrl}}"], "path": ["api", "carrito", "items", "1"] }
+					}
+				},
+				{
+					"name": "Vaciar Carrito",
+					"request": {
+						"method": "DELETE",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"url": { "raw": "{{baseUrl}}/api/carrito", "host": ["{{baseUrl}}"], "path": ["api", "carrito"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Pedidos",
+			"description": "Endpoints de gestión de pedidos.",
+			"item": [
+				{
+					"name": "Crear Pedido",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"idVariante\": 1,\n      \"cantidad\": 2,\n      \"precioUnitario\": 34990\n    }\n  ],\n  \"direccionEnvio\": {\n    \"calle\": \"Av. Principal 123\",\n    \"ciudad\": \"Santiago\",\n    \"region\": \"Metropolitana\",\n    \"codigoPostal\": \"7500000\",\n    \"pais\": \"Chile\"\n  },\n  \"notas\": \"Entregar en horario laboral\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/pedidos", "host": ["{{baseUrl}}"], "path": ["api", "pedidos"] }
+					}
+				},
+				{
+					"name": "Pagar Pedido",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"url": { "raw": "{{baseUrl}}/api/pedidos/1/pagar", "host": ["{{baseUrl}}"], "path": ["api", "pedidos", "1", "pagar"] }
+					}
+				},
+				{
+					"name": "Listar Todos (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pedidos", "host": ["{{baseUrl}}"], "path": ["api", "pedidos"] }
+					}
+				},
+				{
+					"name": "Mis Pedidos",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"url": { "raw": "{{baseUrl}}/api/pedidos/mis-pedidos", "host": ["{{baseUrl}}"], "path": ["api", "pedidos", "mis-pedidos"] }
+					}
+				},
+				{
+					"name": "Consultar por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pedidos/1", "host": ["{{baseUrl}}"], "path": ["api", "pedidos", "1"] }
+					}
+				},
+				{
+					"name": "Actualizar Estado (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pedidos/1/estado?estado=ENVIADO", "host": ["{{baseUrl}}"], "path": ["api", "pedidos", "1", "estado"], "query": [{ "key": "estado", "value": "ENVIADO" }] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Stock",
+			"description": "Endpoints de gestión de inventario.",
+			"item": [
+				{
+					"name": "Listar Todo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/stock", "host": ["{{baseUrl}}"], "path": ["api", "stock"] }
+					}
+				},
+				{
+					"name": "Consultar por Variante",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/stock/1", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1"] }
+					}
+				},
+				{
+					"name": "Crear Inventario (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/stock/1", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1"] }
+					}
+				},
+				{
+					"name": "Reponer Stock (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cantidad\": 50\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/stock/1/reponer", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1", "reponer"] }
+					}
+				},
+				{
+					"name": "Reducir Stock (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cantidad\": 10\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/stock/1/reducir", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1", "reducir"] }
+					}
+				},
+				{
+					"name": "Reservar Stock (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cantidad\": 5,\n  \"idPedido\": 1\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/stock/1/reservar", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1", "reservar"] }
+					}
+				},
+				{
+					"name": "Confirmar Reserva (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idPedido\": 1\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/stock/1/confirmar-reserva", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1", "confirmar-reserva"] }
+					}
+				},
+				{
+					"name": "Liberar Reserva (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idPedido\": 1\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/stock/1/liberar-reserva", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1", "liberar-reserva"] }
+					}
+				},
+				{
+					"name": "Eliminar Inventario (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/stock/1", "host": ["{{baseUrl}}"], "path": ["api", "stock", "1"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Pagos",
+			"description": "Endpoints de procesamiento de pagos.",
+			"item": [
+				{
+					"name": "Crear Pago",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idPedido\": 1,\n  \"monto\": 69980,\n  \"metodoPago\": \"TARJETA_CREDITO\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/pagos", "host": ["{{baseUrl}}"], "path": ["api", "pagos"] }
+					}
+				},
+				{
+					"name": "Listar Todos (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pagos", "host": ["{{baseUrl}}"], "path": ["api", "pagos"] }
+					}
+				},
+				{
+					"name": "Consultar por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pagos/1", "host": ["{{baseUrl}}"], "path": ["api", "pagos", "1"] }
+					}
+				},
+				{
+					"name": "Consultar por Pedido",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pagos/pedido/1", "host": ["{{baseUrl}}"], "path": ["api", "pagos", "pedido", "1"] }
+					}
+				},
+				{
+					"name": "Procesar Pago (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pagos/1/procesar", "host": ["{{baseUrl}}"], "path": ["api", "pagos", "1", "procesar"] }
+					}
+				},
+				{
+					"name": "Anular Pago (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pagos/1/anular", "host": ["{{baseUrl}}"], "path": ["api", "pagos", "1", "anular"] }
+					}
+				},
+				{
+					"name": "Reintentar Pago (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/pagos/1/reintentar", "host": ["{{baseUrl}}"], "path": ["api", "pagos", "1", "reintentar"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Envíos",
+			"description": "Endpoints de gestión de envíos.",
+			"item": [
+				{
+					"name": "Crear Envío",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idPedido\": 1,\n  \"courier\": \"Starken\",\n  \"direccion\": \"Av. Principal 123, Santiago\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/envios", "host": ["{{baseUrl}}"], "path": ["api", "envios"] }
+					}
+				},
+				{
+					"name": "Listar Todos (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/envios", "host": ["{{baseUrl}}"], "path": ["api", "envios"] }
+					}
+				},
+				{
+					"name": "Listar por Estado (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/envios/estado/PENDIENTE", "host": ["{{baseUrl}}"], "path": ["api", "envios", "estado", "PENDIENTE"] }
+					}
+				},
+				{
+					"name": "Consultar por ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/envios/1", "host": ["{{baseUrl}}"], "path": ["api", "envios", "1"] }
+					}
+				},
+				{
+					"name": "Consultar por Pedido",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/envios/pedido/1", "host": ["{{baseUrl}}"], "path": ["api", "envios", "pedido", "1"] }
+					}
+				},
+				{
+					"name": "Avanzar Estado (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"estado\": \"EN_TRANSITO\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/envios/1/estado", "host": ["{{baseUrl}}"], "path": ["api", "envios", "1", "estado"] }
+					}
+				},
+				{
+					"name": "Cancelar Envío (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/envios/1/cancelar", "host": ["{{baseUrl}}"], "path": ["api", "envios", "1", "cancelar"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Notificaciones",
+			"description": "Endpoints de notificaciones.",
+			"item": [
+				{
+					"name": "Enviar Notificación",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuario\": 1,\n  \"tipoEvento\": \"PEDIDO_CREADO\",\n  \"mensaje\": \"Su pedido #123 ha sido confirmado\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/api/notificaciones/enviar", "host": ["{{baseUrl}}"], "path": ["api", "notificaciones", "enviar"] }
+					}
+				},
+				{
+					"name": "Listar Todas (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/notificaciones", "host": ["{{baseUrl}}"], "path": ["api", "notificaciones"] }
+					}
+				},
+				{
+					"name": "Obtener por ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/notificaciones/1", "host": ["{{baseUrl}}"], "path": ["api", "notificaciones", "1"] }
+					}
+				},
+				{
+					"name": "Mis Notificaciones",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "X-User-Id", "value": "1", "type": "text" }],
+						"url": { "raw": "{{baseUrl}}/api/notificaciones/mis-notificaciones", "host": ["{{baseUrl}}"], "path": ["api", "notificaciones", "mis-notificaciones"] }
+					}
+				},
+				{
+					"name": "Eliminar (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/notificaciones/1", "host": ["{{baseUrl}}"], "path": ["api", "notificaciones", "1"] }
+					}
+				}
+			]
+		}
+	]
+}

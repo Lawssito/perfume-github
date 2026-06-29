@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
  * de agregar el producto.
  */
 
-@FeignClient(name = "ms-catalogo")
+@FeignClient(name = "ms-catalogo", fallbackFactory = CatalogoClientFallbackFactory.class)
 public interface CatalogoClient {
 
     @GetMapping("/api/catalogo/variantes/{idVariante}")

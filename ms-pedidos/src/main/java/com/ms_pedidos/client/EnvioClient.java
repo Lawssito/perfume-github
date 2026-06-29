@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "ms-envios")
+@FeignClient(name = "ms-envios", fallbackFactory = EnvioClientFallbackFactory.class)
 public interface EnvioClient {
 
     @PostMapping("/api/envios")

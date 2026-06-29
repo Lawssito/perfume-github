@@ -13,6 +13,8 @@ spring:
               uri: lb://auth-service
               predicates:
                 - Path=/api/auth/**
+              filters:
+                - RewritePath=/api/auth/(?<seg>.*), /api/v1/auth/$\{seg}
             - id: user-service
               uri: lb://user-service
               predicates:
