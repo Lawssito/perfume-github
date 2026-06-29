@@ -1,34 +1,35 @@
-# 🚀 SISTEMA DE MICROSERVICIOS MULTIMÓDULO - ENTREGA FINAL
+# 🚀 Perfume Store — Microservicios Multimódulo
 
-## 📦 COMPONENTES DE DISTRIBUCIÓN Y DEFENSA TÉCNICA
+**Estudiantes:** Andres Cereño y Julian Silva
 
-| Componente | Enlace |
-|------------|--------|
-| 🐳 ZIP Con Docker | [Descargar ZIP Con Docker](https://drive.google.com/file/d/1JD6oqPB258U0ktaG-RupblNP_kWrP4df/view?usp=sharing) |
-| 🎥 Video de Defensa Técnica | [Ver Video](https://drive.google.com/file/d/1v4ezIb4zTLlzQAV6_auqezYC4cGdFrHP/view?usp=drive_link) |
-| 📄 Subtítulos del Video | [subtitulos-video.txt](subtitulos-video.txt) |
+Sistema de e-commerce de perfumes basado en una arquitectura de **microservicios** con **Java 21**, **Spring Boot 4.0.6** y **Spring Cloud 2025.1.x**. Cada dominio de negocio vive en un microservicio independiente con su propia base de datos MySQL, comunicándose vía OpenFeign y descubriéndose a través de Eureka.
+
+## 📦 Componentes de distribución
+
+| Componente | Descripción | Enlace |
+|------------|-------------|--------|
+| 📁 ZIP Nativo (sin Docker) | JARs precompilados para ejecución directa con Java 21 + H2 | [Descargar ZIP Nativo](https://drive.google.com/...) |
+| 🐳 ZIP Con Docker | JARs + docker-compose + scripts para despliegue con Docker | [Descargar ZIP Con Docker](https://drive.google.com/file/d/1JD6oqPB258U0ktaG-RupblNP_kWrP4df/view?usp=sharing) |
+| 🎥 Video Defensa Técnica | Video explicativo del sistema | [Ver Video](https://drive.google.com/file/d/1v4ezIb4zTLlzQAV6_auqezYC4cGdFrHP/view?usp=drive_link) |
+| 📄 Subtítulos del Video | Transcripción del video de defensa | [subtitulos-video.txt](subtitulos-video.txt) |
 
 ---
-
-# Perfume Store API
-
-Backend de un e-commerce de perfumes basado en **microservicios** con **Java 21**, **Spring Boot 4** y **Spring Cloud 2025**. Expone una API REST para catálogo, usuarios, autenticación, carrito, pedidos, pagos, envíos, stock y notificaciones.
 
 ## Tabla de contenidos
 
 - [Descripción](#descripción)
 - [Tecnologías](#tecnologías)
 - [Arquitectura](#arquitectura)
-- [Servicios y puertos](#servicios-y-puertos)
-- [Requisitos](#requisitos)
-- [Configuración](#configuración)
-- [Ejecución local](#ejecución-local)
+- [Microservicios](#microservicios)
 - [API Gateway y rutas](#api-gateway-y-rutas)
 - [Endpoints principales](#endpoints-principales)
+- [Swagger](#swagger)
+- [Requisitos](#requisitos)
+- [Ejecución con Docker](#ejecución-con-docker)
+- [Ejecución nativa (sin Docker)](#ejecución-nativa-sin-docker)
 - [Flujo de compra](#flujo-de-compra-carrito--pedido--pago)
-- [Pruebas con Postman](#pruebas-con-postman)
+- [JaCoCo](#jacoco)
 - [Estructura del repositorio](#estructura-del-repositorio)
-- [Contribución](#contribución)
 
 ## Descripción
 
@@ -84,7 +85,28 @@ Cliente (Postman / Frontend)
 
 Cada microservicio sigue capas internas: `controller` → `service` → `repository`, con `dto`, `model` y `exception`.
 
-## Servicios y puertos
+## Microservicios
+
+El sistema está compuesto por **12 microservicios** que cubren todo el ciclo de vida de un e-commerce:
+
+| Microservicio | Función |
+|---------------|---------|
+| `eureka-server` | Servidor de descubrimiento y registro de servicios |
+| `api-gateway` | Puerta de entrada única (Gateway Server WebMVC) |
+| `auth-service` | Autenticación y gestión de credenciales (JWT) |
+| `user-service` | Gestión de usuarios y direcciones |
+| `security-service` | Roles, permisos y autorización (RBAC) |
+| `ms-catalogo` | Catálogo de perfumes, marcas, categorías y variantes |
+| `ms-stock` | Control de inventario y stock |
+| `ms-carrito` | Carrito de compras por usuario |
+| `ms-pedidos` | Orquestación de pedidos (orquesta carrito, stock, pago, envío) |
+| `ms-pagos` | Procesamiento de pagos (simulación bancaria) |
+| `ms-envios` | Gestión de envíos y couriers |
+| `ms-notificaciones` | Notificaciones a usuarios |
+
+### Puertos
+
+| Servicio | Puerto | Nombre en Eureka | Prefijo API |
 
 | Servicio | Puerto | Nombre en Eureka | Prefijo API |
 |----------|--------|------------------|-------------|
@@ -106,34 +128,11 @@ Cada microservicio sigue capas internas: `controller` → `service` → `reposit
 ## Requisitos
 
 - JDK 21
-- Maven 3.9+ (o el wrapper `./mvnw` incluido en cada módulo)
-- MySQL accesible en `localhost:3307` (cada servicio crea su base si no existe)
+- Maven 3.9+ (o el wrapper `./mvnw`)
+- MySQL 8.0+ (puerto `3307`) o Docker Desktop
 - Git
 
-## Configuración
-
-Cada microservicio define su datasource en `src/main/resources/application.yml` (o `.yaml`). Por defecto:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3307/bd_<nombre_servicio>?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
-    username: root
-    password:          # vacío por defecto
-```
-
-Ajusta usuario, contraseña y host según tu entorno local.
-
-Eureka y el gateway apuntan a:
-
-```yaml
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-```
-
-## Ejecución local
+## Ejecución con Docker
 
 ### 1. Clonar el repositorio
 
@@ -142,32 +141,72 @@ git clone https://github.com/Lawssito/perfume-github.git
 cd perfume-github
 ```
 
-### 2. Levantar MySQL
-
-Asegúrate de que MySQL esté corriendo en el puerto configurado (`3307` por defecto en los `application.yml`).
-
-### 3. Orden de arranque
-
-Levanta los servicios en este orden (cada uno en su carpeta o desde el IDE):
-
-1. **eureka-server** → `http://localhost:8761`
-2. **api-gateway** → `http://localhost:8080`
-3. El resto de microservicios (orden flexible una vez Eureka esté activo)
-
-Ejemplo con Maven Wrapper desde la carpeta del servicio:
+### 2. Iniciar todos los servicios
 
 ```bash
-cd eureka-server && ./mvnw spring-boot:run
-cd api-gateway && ./mvnw spring-boot:run
-cd user-service && ./mvnw spring-boot:run
-# ... repetir para cada microservicio
+docker compose up -d
 ```
 
-### 4. Verificar registro en Eureka
+Esto levanta **13 contenedores**: MySQL 8.0, Eureka Server, API Gateway y los 10 microservicios.
 
-Abre `http://localhost:8761` y confirma que aparecen instancias `UP` de los servicios que necesites (por ejemplo `USER-SERVICE`, `AUTH-SERVICE`, `MS-CATALOGO`).
+### 3. Verificar
 
-Si el gateway responde **404** en rutas válidas, revisa que esté usando la configuración actual de rutas bajo `spring.cloud.gateway.server.webmvc.routes` en `api-gateway/src/main/resources/application.yaml`.
+- **Eureka Dashboard:** `http://localhost:8761` — todas las instancias `UP`
+- **API Gateway:** `http://localhost:8080`
+
+### 4. Detener
+
+```bash
+docker compose down
+```
+
+## Ejecución nativa (sin Docker)
+
+### 1. Clonar
+
+```bash
+git clone https://github.com/Lawssito/perfume-github.git
+cd perfume-github
+```
+
+### 2. Levantar MySQL
+
+Asegúrate de que MySQL esté corriendo en el puerto `3307`:
+
+```bash
+docker run -d --name perfume-mysql -p 3307:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0
+```
+
+O usa tu instalación local de MySQL configurada en `localhost:3307`.
+
+### 3. Compilar
+
+```bash
+mvn clean package -DskipTests
+```
+
+### 4. Orden de arranque
+
+Levanta los servicios en este orden (desde la raíz del proyecto):
+
+```bash
+cd eureka-server && mvn spring-boot:run
+cd api-gateway && mvn spring-boot:run
+cd auth-service && mvn spring-boot:run
+cd user-service && mvn spring-boot:run
+cd security-service && mvn spring-boot:run
+cd ms-catalogo && mvn spring-boot:run
+cd ms-stock && mvn spring-boot:run
+cd ms-carrito && mvn spring-boot:run
+cd ms-pedidos && mvn spring-boot:run
+cd ms-pagos && mvn spring-boot:run
+cd ms-envios && mvn spring-boot:run
+cd ms-notificaciones && mvn spring-boot:run
+```
+
+### 5. Verificar registro en Eureka
+
+Abre `http://localhost:8761` y confirma que aparecen instancias `UP`.
 
 ## API Gateway y rutas
 
@@ -298,12 +337,22 @@ En el checkout normal el cliente **no** llama a estos endpoints: `ms-pedidos` lo
 
 **Servicios necesarios para el happy path:** `ms-catalogo`, `ms-stock`, `ms-carrito`, `ms-pagos` (y opcionalmente `ms-envios`, `ms-notificaciones`).
 
-Consulta Swagger en cada servicio (acceso directo al puerto del microservicio):
+## Swagger
 
-- `http://localhost:8081/swagger-ui.html` (user-service)
-- `http://localhost:8082/swagger-ui.html` (auth-service)
-- `http://localhost:8084/swagger-ui.html` (ms-catalogo)
-- *(y así para los demás servicios que incluyan SpringDoc)*
+Cada microservicio expone su documentación interactiva vía **SpringDoc OpenAPI**. Se accede directamente al puerto del servicio:
+
+| Servicio | Swagger UI |
+|----------|------------|
+| user-service | `http://localhost:8081/swagger-ui.html` |
+| auth-service | `http://localhost:8082/swagger-ui.html` |
+| security-service | `http://localhost:8083/swagger-ui.html` |
+| ms-catalogo | `http://localhost:8084/swagger-ui.html` |
+| ms-stock | `http://localhost:8085/swagger-ui.html` |
+| ms-carrito | `http://localhost:8086/swagger-ui.html` |
+| ms-pagos | `http://localhost:8087/swagger-ui.html` |
+| ms-envios | `http://localhost:8088/swagger-ui.html` |
+| ms-notificaciones | `http://localhost:8089/swagger-ui.html` |
+| ms-pedidos | `http://localhost:8090/swagger-ui.html` |
 
 ## Pruebas con Postman
 
@@ -350,12 +399,12 @@ perfume-github/
 
 Cada módulo es un proyecto Maven independiente con su propio `pom.xml` y `src/main/java`.
 
-## Contribución
+## JaCoCo
 
-1. Crear una rama: `git checkout -b feature/nueva-funcionalidad`
-2. Realizar cambios con commits descriptivos.
-3. Abrir un Pull Request con contexto funcional y técnico.
+JaCoCo está configurado en el `pom.xml` raíz para generar reportes de cobertura de pruebas. Para ejecutar las pruebas y generar el reporte:
 
-## Licencia
+```bash
+mvn clean verify
+```
 
-Este proyecto se distribuye bajo la licencia que defina el equipo.
+Los reportes se generan en `target/site/jacoco/index.html` de cada módulo (y en la raíz si se configura el aggregator).
