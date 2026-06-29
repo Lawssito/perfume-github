@@ -1,0 +1,19 @@
+SUBTÍTULOS DEL VIDEO DE DEFENSA TÉCNICA
+========================================
+
+Enlace al video:
+https://drive.google.com/file/d/1v4ezIb4zTLlzQAV6_auqezYC4cGdFrHP/view?usp=drive_link
+
+========================================
+TRANSCRIPCIÓN / GUIÓN DEL VIDEO
+========================================
+
+[Nota: Agregar aquí la transcripción completa, guion o subtítulos del video de defensa técnica.]
+
+Estructura sugerida:
+- Introducción: Presentación del sistema de microservicios
+- Arquitectura: Explicación de los componentes (Eureka, Gateway, microservicios)
+- Demostración: Endpoints principales y flujo de compra
+- Pruebas: Ejecución de tests unitarios
+- Docker: Despliegue con Docker Compose
+- Cierre: Conclusiones y preguntas

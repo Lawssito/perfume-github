@@ -345,5 +345,8 @@ INSERT INTO rol_permisos (id_rol, id_permiso) SELECT 3, 1 WHERE NOT EXISTS (SELE
 INSERT INTO rol_permisos (id_rol, id_permiso) SELECT 3, 2 WHERE NOT EXISTS (SELECT 1 FROM rol_permisos WHERE id_rol = 3 AND id_permiso = 2);
 INSERT INTO rol_permisos (id_rol, id_permiso) SELECT 3, 4 WHERE NOT EXISTS (SELECT 1 FROM rol_permisos WHERE id_rol = 3 AND id_permiso = 4);
 
--- NOTA: La asignacion de roles a usuarios se maneja via SecurityInitializer (configuracion)
--- que lee la propiedad 'security.admin.default-user-id' de application.yml
+-- Asignacion directa de roles a usuarios (para que funcione aunque security-service
+-- aun no haya arrancado o el SecurityInitializer no se haya ejecutado)
+INSERT INTO usuario_roles (id_usuario, id_rol) SELECT 1, 1 WHERE NOT EXISTS (SELECT 1 FROM usuario_roles WHERE id_usuario = 1 AND id_rol = 1);
+INSERT INTO usuario_roles (id_usuario, id_rol) SELECT 1, 2 WHERE NOT EXISTS (SELECT 1 FROM usuario_roles WHERE id_usuario = 1 AND id_rol = 2);
+INSERT INTO usuario_roles (id_usuario, id_rol) SELECT 2, 1 WHERE NOT EXISTS (SELECT 1 FROM usuario_roles WHERE id_usuario = 2 AND id_rol = 1);

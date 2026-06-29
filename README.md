@@ -1,3 +1,16 @@
+# 🚀 SISTEMA DE MICROSERVICIOS MULTIMÓDULO - ENTREGA FINAL
+
+## 📦 COMPONENTES DE DISTRIBUCIÓN Y DEFENSA TÉCNICA
+
+| Componente | Enlace |
+|------------|--------|
+| 📁 ZIP Sin Docker | [Descargar ZIP Sin Docker](https://drive.google.com/...) |
+| 🐳 ZIP Con Docker | [Descargar ZIP Con Docker](https://drive.google.com/...) |
+| 🎥 Video de Defensa Técnica | [Ver Video](https://drive.google.com/file/d/1v4ezIb4zTLlzQAV6_auqezYC4cGdFrHP/view?usp=drive_link) |
+| 📄 Subtítulos del Video | [subtitulos-video.txt](subtitulos-video.txt) |
+
+---
+
 # Perfume Store API
 
 Backend de un e-commerce de perfumes basado en **microservicios** con **Java 21**, **Spring Boot 4** y **Spring Cloud 2025**. Expone una API REST para catálogo, usuarios, autenticación, carrito, pedidos, pagos, envíos, stock y notificaciones.

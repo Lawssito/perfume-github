@@ -36,6 +36,10 @@ target/
 *.tar.gz
 .mvn/wrapper/maven-wrapper.jar
 
+# ─── Scripts de shell / batch ────────
+*.bat
+*.sh
+
 # ─── Ejecutables / instaladores ──────
 *.exe
 *.msi
