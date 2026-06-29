@@ -4,7 +4,6 @@
 
 | Componente | Enlace |
 |------------|--------|
-| 📁 ZIP Sin Docker | [Descargar ZIP Sin Docker](https://drive.google.com/...) |
 | 🐳 ZIP Con Docker | [Descargar ZIP Con Docker](https://drive.google.com/...) |
 | 🎥 Video de Defensa Técnica | [Ver Video](https://drive.google.com/file/d/1v4ezIb4zTLlzQAV6_auqezYC4cGdFrHP/view?usp=drive_link) |
 | 📄 Subtítulos del Video | [subtitulos-video.txt](subtitulos-video.txt) |
