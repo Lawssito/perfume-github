@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.auth_service.dto.RolesUsuarioResponseDTO;
 
-@FeignClient(name = "security-service")
+@FeignClient(name = "security-service", fallbackFactory = SecurityServiceClientFallbackFactory.class)
 public interface SecurityServiceClient {
     @GetMapping("/api/usuario-roles/{idUsuario}")
     RolesUsuarioResponseDTO obtenerRoles(@PathVariable("idUsuario") Long idUsuario);

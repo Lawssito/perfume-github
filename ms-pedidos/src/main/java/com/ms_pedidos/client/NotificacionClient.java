@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.ms_pedidos.client.dto.CrearNotificacionDTO;
 
-@FeignClient(name = "ms-notificaciones")
+@FeignClient(name = "ms-notificaciones", fallbackFactory = NotificacionClientFallbackFactory.class)
 public interface NotificacionClient {
 
     @PostMapping("/api/notificaciones/enviar")

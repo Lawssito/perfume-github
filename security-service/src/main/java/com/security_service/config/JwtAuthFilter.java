@@ -28,6 +28,13 @@ public class JwtAuthFilter implements Filter {
     @Value("${security.internal-api-key}")
     private String internalApiKey;
 
+    // Rutas públicas que NO requieren autenticación
+    private static final List<String> PUBLIC_PATHS = List.of(
+        "/swagger-ui",
+        "/swagger-ui.html",
+        "/v3/api-docs"
+    );
+
     private SecretKey key() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
@@ -40,6 +47,12 @@ public class JwtAuthFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         String path = request.getRequestURI();
+
+        // Permitir rutas públicas (swagger, api-docs)
+        if (PUBLIC_PATHS.stream().anyMatch(path::startsWith)) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         // Permitir llamadas internas con API key (user-service → security-service via Feign)
         String apiKey = request.getHeader("X-Internal-Api-Key");

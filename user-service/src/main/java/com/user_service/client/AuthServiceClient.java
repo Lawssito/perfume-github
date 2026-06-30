@@ -11,7 +11,7 @@ import com.user_service.dto.CrearCredencialClientDTO;
 import com.user_service.dto.TokenClaimsClientDTO;
 import com.user_service.dto.ValidateTokenClientDTO;
 
-@FeignClient(name = "auth-service")
+@FeignClient(name = "auth-service", fallbackFactory = AuthServiceClientFallbackFactory.class)
 public interface AuthServiceClient {
     @PostMapping("/api/auth/credenciales")
     void crearCredencial(@RequestBody CrearCredencialClientDTO request);

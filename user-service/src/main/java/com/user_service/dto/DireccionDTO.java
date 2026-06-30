@@ -1,10 +1,13 @@
 package com.user_service.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class DireccionDTO {
+
+    @Schema(example = "Av. Providencia")
 
     @NotBlank(message = "La calle es obligatoria")
     private String calle;
@@ -19,5 +22,6 @@ public class DireccionDTO {
     private String ciudad;
 
     @NotBlank(message = "El tipo o alias (Casa, Trabajo, etc.) es obligatorio")
+    @Schema(example = "Casa")
     private String tipoAlias;
 }

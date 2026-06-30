@@ -1,0 +1,11 @@
+spring:
+  jpa:
+    show-sql: false
+logging:
+  level:
+    root: WARN
+    com.eureka_server: INFO
+eureka:
+  server:
+    wait-time-in-ms-when-sync-empty: 30000
+    renewal-percent-threshold: 0.85

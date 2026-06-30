@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.user_service.dto.AsignarRolClientDTO;
 
-@FeignClient(name = "security-service")
+@FeignClient(name = "security-service", fallbackFactory = SecurityServiceClientFallbackFactory.class)
 public interface SecurityServiceClient {
     @PostMapping("/api/usuario-roles")
     void asignarRol(@RequestBody AsignarRolClientDTO request);

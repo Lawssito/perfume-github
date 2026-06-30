@@ -3,6 +3,11 @@ package com.user_service.controller;
 import com.user_service.dto.*;
 import com.user_service.service.UsuarioService;
 import com.user_service.service.security.AutorizacionUsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,12 +21,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
+@Tag(name = "Usuarios", description = "Gestión de usuarios del sistema")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
     private final AutorizacionUsuarioService autorizacionUsuarioService;
 
     @PostMapping
+    @Operation(summary = "Registrar usuario", description = "Crea un nuevo usuario con credenciales de acceso")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Usuario registrado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos en la solicitud"),
+            @ApiResponse(responseCode = "409", description = "El email ya está registrado")
+    })
     public ResponseEntity<UsuarioResponseDTO> registrar(@Valid @RequestBody RegistroUsuarioRequestDTO dto) {
         log.info("[AUDIT email={}] POST /api/usuarios — registro", dto.getEmail());
         UsuarioResponseDTO respuesta = usuarioService.registrarUsuario(dto);
@@ -30,6 +42,11 @@ public class UsuarioController {
     }
 
     @GetMapping
+    @Operation(summary = "Listar usuarios", description = "Obtiene todos los usuarios registrados (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida exitosamente"),
+            @ApiResponse(responseCode = "403", description = "No tiene permisos de administrador")
+    })
     public ResponseEntity<List<UsuarioResponseDTO>> listarTodos(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
@@ -41,8 +58,13 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Obtener usuario por ID", description = "Obtiene los datos de un usuario por su ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario encontrado"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
     public ResponseEntity<UsuarioResponseDTO> obtenerPorId(
-            @PathVariable Long id,
+            @Parameter(description = "ID del usuario", example = "1") @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
         autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);
@@ -51,8 +73,14 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Actualizar usuario", description = "Actualiza los datos de un usuario existente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuario actualizado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
     public ResponseEntity<UsuarioResponseDTO> actualizar(
-            @PathVariable Long id,
+            @Parameter(description = "ID del usuario", example = "1") @PathVariable Long id,
             @Valid @RequestBody ActualizarUsuarioDTO dto,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
@@ -62,8 +90,14 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar usuario (baja lógica)", description = "Marca un usuario como eliminado (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Usuario eliminado exitosamente"),
+            @ApiResponse(responseCode = "403", description = "No tiene permisos de administrador"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
     public ResponseEntity<Void> eliminar(
-            @PathVariable Long id,
+            @Parameter(description = "ID del usuario", example = "1") @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
         autorizacionUsuarioService.exigirAdmin(auth);
@@ -73,8 +107,13 @@ public class UsuarioController {
     }
 
     @PostMapping("/{id}/direcciones")
+    @Operation(summary = "Agregar dirección", description = "Agrega una nueva dirección a un usuario")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Dirección creada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
     public ResponseEntity<DireccionResponseDTO> agregarDireccion(
-            @PathVariable Long id,
+            @Parameter(description = "ID del usuario", example = "1") @PathVariable Long id,
             @Valid @RequestBody DireccionDTO dto,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
@@ -86,8 +125,12 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}/direcciones")
+    @Operation(summary = "Listar direcciones", description = "Obtiene todas las direcciones de un usuario")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de direcciones obtenida")
+    })
     public ResponseEntity<List<DireccionResponseDTO>> listarDirecciones(
-            @PathVariable Long id,
+            @Parameter(description = "ID del usuario", example = "1") @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
         autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);
@@ -96,9 +139,14 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}/direcciones/{idDireccion}")
+    @Operation(summary = "Eliminar dirección", description = "Elimina una dirección específica de un usuario")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Dirección eliminada exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Dirección no encontrada")
+    })
     public ResponseEntity<Void> eliminarDireccion(
-            @PathVariable Long id,
-            @PathVariable Long idDireccion,
+            @Parameter(description = "ID del usuario", example = "1") @PathVariable Long id,
+            @Parameter(description = "ID de la dirección", example = "1") @PathVariable Long idDireccion,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         UsuarioAutenticadoDTO auth = autorizacionUsuarioService.validarSesion(authorization);
         autorizacionUsuarioService.exigirMismoUsuarioOAdmin(auth, id);

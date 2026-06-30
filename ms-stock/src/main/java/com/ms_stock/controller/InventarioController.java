@@ -2,6 +2,11 @@ package com.ms_stock.controller;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +38,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @RestController
 @RequestMapping("/api/stock")
 @RequiredArgsConstructor
+@Tag(name = "Stock / Inventario", description = "Gestión de inventario, reservas y reposiciones")
 public class InventarioController {
     
     private final InventarioService inventarioService;
@@ -47,6 +53,10 @@ public class InventarioController {
     }
 
     @GetMapping
+    @Operation(summary = "Listar inventario completo", description = "Obtiene todo el inventario registrado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Inventario obtenido exitosamente")
+    })
     public ResponseEntity<List<InventarioDTO>> listarTodo() {
         log.info("[AUDIT] GET /api/stock - Listando todo el inventario");
 
@@ -58,7 +68,12 @@ public class InventarioController {
     }
 
     @GetMapping("/{idVariante}")
-    public ResponseEntity<InventarioDTO> consultarPorVariante(@PathVariable Long idVariante) {
+    @Operation(summary = "Consultar stock por variante", description = "Obtiene el inventario de una variante específica")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Stock encontrado"),
+            @ApiResponse(responseCode = "404", description = "Variante no encontrada en inventario")
+    })
+    public ResponseEntity<InventarioDTO> consultarPorVariante(@Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante) {
 
         log.info("[AUDIT] GET /api/stock/{} - Consultando stock", idVariante);
 
@@ -71,8 +86,13 @@ public class InventarioController {
     }
 
     @PostMapping("/{idVariante}")
+    @Operation(summary = "Crear registro de inventario", description = "Crea un nuevo registro de inventario para una variante (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Inventario creado exitosamente"),
+            @ApiResponse(responseCode = "409", description = "La variante ya tiene inventario")
+    })
     public ResponseEntity<InventarioDTO> crearInventario(
-            @PathVariable Long idVariante) {
+            @Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante) {
 
         exigirAdmin();
         log.info("[AUDIT] POST /api/stock/{} - Creando registro de inventario", idVariante);
@@ -86,7 +106,12 @@ public class InventarioController {
     }
 
     @PutMapping("/{idVariante}/reponer")
-    public ResponseEntity<InventarioDTO> reponerStock(@PathVariable Long idVariante,
+    @Operation(summary = "Reponer stock", description = "Incrementa el stock disponible de una variante (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Stock repuesto exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Cantidad inválida")
+    })
+    public ResponseEntity<InventarioDTO> reponerStock(@Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante,
             @Valid @RequestBody ReponerStockDTO dto) {
 
         exigirAdmin();
@@ -103,7 +128,12 @@ public class InventarioController {
     }
 
     @PutMapping("/{idVariante}/reducir")
-    public ResponseEntity<InventarioDTO> reducirStock(@PathVariable Long idVariante,
+    @Operation(summary = "Reducir stock", description = "Reduce el stock disponible de una variante (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Stock reducido exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Stock insuficiente")
+    })
+    public ResponseEntity<InventarioDTO> reducirStock(@Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante,
             @Valid @RequestBody ReducirStockDTO dto) {
 
         exigirAdmin();
@@ -119,7 +149,12 @@ public class InventarioController {
     }
 
     @PutMapping("/{idVariante}/reservar")
-    public ResponseEntity<InventarioDTO> reservarStock(@PathVariable Long idVariante,
+    @Operation(summary = "Reservar stock", description = "Reserva stock de una variante para un pedido en curso (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Stock reservado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Stock insuficiente para reservar")
+    })
+    public ResponseEntity<InventarioDTO> reservarStock(@Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante,
             @Valid @RequestBody ReservarStockDTO dto) {
 
         exigirAdmin();
@@ -135,7 +170,12 @@ public class InventarioController {
     }
 
     @PutMapping("/{idVariante}/confirmar-reserva")
-    public ResponseEntity<InventarioDTO> confirmarReserva(@PathVariable Long idVariante,
+    @Operation(summary = "Confirmar reserva", description = "Confirma una reserva y descuenta del stock disponible (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reserva confirmada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Reserva insuficiente")
+    })
+    public ResponseEntity<InventarioDTO> confirmarReserva(@Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante,
             @Valid @RequestBody ConfirmarReservaDTO dto) {
 
         exigirAdmin();
@@ -151,7 +191,12 @@ public class InventarioController {
     }
 
     @PutMapping("/{idVariante}/liberar-reserva")
-    public ResponseEntity<InventarioDTO> liberarReserva(@PathVariable Long idVariante,
+    @Operation(summary = "Liberar reserva", description = "Libera stock previamente reservado (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reserva liberada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Reserva insuficiente para liberar")
+    })
+    public ResponseEntity<InventarioDTO> liberarReserva(@Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante,
             @Valid @RequestBody LiberarReservaDTO dto) {
 
         exigirAdmin();
@@ -167,7 +212,12 @@ public class InventarioController {
     }
 
     @DeleteMapping("/{idVariante}")
-    public ResponseEntity<Void> eliminarInventario(@PathVariable Long idVariante) {
+    @Operation(summary = "Eliminar inventario", description = "Elimina el registro de inventario de una variante (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Inventario eliminado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Inventario no encontrado")
+    })
+    public ResponseEntity<Void> eliminarInventario(@Parameter(description = "ID de la variante", example = "1") @PathVariable Long idVariante) {
         exigirAdmin();
         log.info("[AUDIT] DELETE /api/stock/{} - Eliminando inventario", idVariante);
         inventarioService.eliminarInventario(idVariante);

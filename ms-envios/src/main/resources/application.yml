@@ -9,14 +9,9 @@ spring:
     username: root
     password:
     driver-class-name: com.mysql.cj.jdbc.Driver
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:db/schema.sql
   jpa:
-    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:

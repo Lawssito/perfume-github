@@ -36,9 +36,13 @@ target/
 *.tar.gz
 .mvn/wrapper/maven-wrapper.jar
 
-# ─── Ejecutables / instaladores ──────
+# ─── Scripts de shell / batch ────────
 *.bat
 *.sh
+
+# ─── Ejecutables / instaladores ──────
+*.exe
+*.msi
 *.exe
 *.msi
 *.dmg
@@ -61,3 +65,7 @@ node_modules/
 *.sqlite3
 data/
 mysql-data/
+
+# ─── Evaluación / Rúbrica ─────────────
+Evaluacion Parcial 3_Estudiante*.md
+Evaluacion Parcial 3_Estudiante*.pdf

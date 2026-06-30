@@ -3,6 +3,11 @@ package com.ms_pagos.controller;
 import com.ms_pagos.dto.CrearPagoDTO;
 import com.ms_pagos.dto.PagoDTO;
 import com.ms_pagos.service.PagoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/pagos")
 @RequiredArgsConstructor
+@Tag(name = "Pagos", description = "Procesamiento de pagos y transacciones")
 public class PagoController {
 
     private final PagoService pagoService;
@@ -34,6 +40,11 @@ public class PagoController {
     }
 
     @PostMapping
+    @Operation(summary = "Crear pago", description = "Registra un nuevo pago asociado a un pedido")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Pago creado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
     public ResponseEntity<PagoDTO> crearPago(
             @Valid @RequestBody CrearPagoDTO dto) {
 
@@ -47,6 +58,10 @@ public class PagoController {
     }
 
     @GetMapping
+    @Operation(summary = "Listar pagos", description = "Obtiene todos los pagos registrados (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de pagos obtenida")
+    })
     public ResponseEntity<List<PagoDTO>> listarTodos() {
         exigirAdmin();
         log.info("[AUDIT] GET /api/pagos - Listando todos los pagos");
@@ -56,7 +71,12 @@ public class PagoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PagoDTO> consultarPorId(@PathVariable Long id) {
+    @Operation(summary = "Consultar pago por ID", description = "Obtiene los detalles de un pago específico")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago encontrado"),
+            @ApiResponse(responseCode = "404", description = "Pago no encontrado")
+    })
+    public ResponseEntity<PagoDTO> consultarPorId(@Parameter(description = "ID de la transacción", example = "1") @PathVariable Long id) {
         log.info("[AUDIT] GET /api/pagos/{}", id);
         PagoDTO respuesta = pagoService.consultarPorId(id);
         log.info("[AUDIT] Pago {} retornado. Estado: {}", id, respuesta.getEstado());
@@ -64,8 +84,13 @@ public class PagoController {
     }
 
     @GetMapping("/pedido/{idPedido}")
+    @Operation(summary = "Consultar pago por pedido", description = "Obtiene el pago asociado a un pedido específico")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago encontrado"),
+            @ApiResponse(responseCode = "404", description = "Pago no encontrado para el pedido")
+    })
     public ResponseEntity<PagoDTO> consultarPorPedido(
-            @PathVariable Long idPedido) {
+            @Parameter(description = "ID del pedido", example = "1") @PathVariable Long idPedido) {
 
         log.info("[AUDIT] GET /api/pagos/pedido/{}", idPedido);
         PagoDTO respuesta = pagoService.consultarPorPedido(idPedido);
@@ -75,7 +100,12 @@ public class PagoController {
     }
 
     @PostMapping("/{id}/procesar")
-    public ResponseEntity<PagoDTO> procesarPago(@PathVariable Long id) {
+    @Operation(summary = "Procesar pago", description = "Procesa un pago pendiente (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago procesado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Pago no encontrado")
+    })
+    public ResponseEntity<PagoDTO> procesarPago(@Parameter(description = "ID de la transacción", example = "1") @PathVariable Long id) {
         exigirAdmin();
         log.info("[AUDIT] POST /api/pagos/{}/procesar", id);
         PagoDTO respuesta = pagoService.procesarPago(id);
@@ -84,7 +114,12 @@ public class PagoController {
     }
 
     @PostMapping("/{id}/anular")
-    public ResponseEntity<PagoDTO> anularPago(@PathVariable Long id) {
+    @Operation(summary = "Anular pago", description = "Anula un pago existente (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago anulado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Pago no encontrado")
+    })
+    public ResponseEntity<PagoDTO> anularPago(@Parameter(description = "ID de la transacción", example = "1") @PathVariable Long id) {
         exigirAdmin();
         log.info("[AUDIT] POST /api/pagos/{}/anular", id);
         PagoDTO respuesta = pagoService.anularPago(id);
@@ -93,7 +128,12 @@ public class PagoController {
     }
 
     @PostMapping("/{id}/reintentar")
-    public ResponseEntity<PagoDTO> reintentarPago(@PathVariable Long id) {
+    @Operation(summary = "Reintentar pago", description = "Reintenta el procesamiento de un pago fallido (solo admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Reintento procesado"),
+            @ApiResponse(responseCode = "404", description = "Pago no encontrado")
+    })
+    public ResponseEntity<PagoDTO> reintentarPago(@Parameter(description = "ID de la transacción", example = "1") @PathVariable Long id) {
         exigirAdmin();
         log.info("[AUDIT] POST /api/pagos/{}/reintentar", id);
         PagoDTO respuesta = pagoService.reintentarPago(id);

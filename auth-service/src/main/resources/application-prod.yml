@@ -1,0 +1,7 @@
+spring:
+  jpa:
+    show-sql: true
+logging:
+  level:
+    root: WARN
+    com.auth_service: INFO

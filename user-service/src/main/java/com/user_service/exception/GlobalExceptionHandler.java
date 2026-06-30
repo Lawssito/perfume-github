@@ -15,8 +15,15 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
-    public ResponseEntity<ErrorResponse> negocio(RuntimeException ex, HttpServletRequest request) {
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> noEncontrado(IllegalArgumentException ex, HttpServletRequest request) {
+        log.warn("[HANDLER] Recurso no encontrado en {}: {}", request.getRequestURI(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(LocalDateTime.now(), 404, "NOT_FOUND", ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> negocio(IllegalStateException ex, HttpServletRequest request) {
         log.warn("[HANDLER] Error de negocio en {}: {}", request.getRequestURI(), ex.getMessage());
         return ResponseEntity.badRequest().body(new ErrorResponse(LocalDateTime.now(), 400, "BAD_REQUEST", ex.getMessage(), request.getRequestURI()));
     }
