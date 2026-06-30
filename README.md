@@ -106,8 +106,6 @@ El sistema está compuesto por **12 microservicios** que cubren todo el ciclo de
 ### Puertos
 
 | Servicio | Puerto | Nombre en Eureka | Prefijo API |
-
-| Servicio | Puerto | Nombre en Eureka | Prefijo API |
 |----------|--------|------------------|-------------|
 | Eureka Server | 8761 | — | — |
 | API Gateway | **8080** | api-gateway | Todas las rutas `/api/**` |
@@ -296,7 +294,10 @@ En el checkout normal el cliente **no** llama a estos endpoints: `ms-pedidos` lo
 
 ## Swagger
 
-Cada microservicio expone su documentación interactiva vía **SpringDoc OpenAPI**. Se accede directamente al puerto del servicio:
+Hay dos formas de acceder a la documentación interactiva vía **SpringDoc OpenAPI**:
+
+- **Unificada (recomendada):** `http://localhost:8080/swagger-ui.html` — muestra todos los servicios en un dropdown a través del API Gateway.
+- **Directa:** cada microservicio expone su propia interfaz en su puerto individual:
 
 | Servicio | Swagger UI |
 |----------|------------|
