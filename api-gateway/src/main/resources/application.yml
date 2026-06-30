@@ -13,8 +13,6 @@ spring:
               uri: lb://auth-service
               predicates:
                 - Path=/api/auth/**
-              filters:
-                - RewritePath=/api/auth/(?<seg>.*), /api/v1/auth/$\{seg}
             - id: user-service
               uri: lb://user-service
               predicates:
@@ -55,6 +53,66 @@ spring:
               uri: lb://ms-pedidos
               predicates:
                 - Path=/api/pedidos/**
+            - id: auth-service-v3-api-docs
+              uri: lb://auth-service
+              predicates:
+                - Path=/v3/api-docs/auth
+              filters:
+                - SetPath=/v3/api-docs
+            - id: user-service-v3-api-docs
+              uri: lb://user-service
+              predicates:
+                - Path=/v3/api-docs/user
+              filters:
+                - SetPath=/v3/api-docs
+            - id: security-service-v3-api-docs
+              uri: lb://security-service
+              predicates:
+                - Path=/v3/api-docs/security
+              filters:
+                - SetPath=/v3/api-docs
+            - id: ms-catalogo-v3-api-docs
+              uri: lb://ms-catalogo
+              predicates:
+                - Path=/v3/api-docs/catalogo
+              filters:
+                - SetPath=/v3/api-docs
+            - id: ms-stock-v3-api-docs
+              uri: lb://ms-stock
+              predicates:
+                - Path=/v3/api-docs/stock
+              filters:
+                - SetPath=/v3/api-docs
+            - id: ms-carrito-v3-api-docs
+              uri: lb://ms-carrito
+              predicates:
+                - Path=/v3/api-docs/carrito
+              filters:
+                - SetPath=/v3/api-docs
+            - id: ms-pagos-v3-api-docs
+              uri: lb://ms-pagos
+              predicates:
+                - Path=/v3/api-docs/pagos
+              filters:
+                - SetPath=/v3/api-docs
+            - id: ms-envios-v3-api-docs
+              uri: lb://ms-envios
+              predicates:
+                - Path=/v3/api-docs/envios
+              filters:
+                - SetPath=/v3/api-docs
+            - id: ms-notificaciones-v3-api-docs
+              uri: lb://ms-notificaciones
+              predicates:
+                - Path=/v3/api-docs/notificaciones
+              filters:
+                - SetPath=/v3/api-docs
+            - id: ms-pedidos-v3-api-docs
+              uri: lb://ms-pedidos
+              predicates:
+                - Path=/v3/api-docs/pedidos
+              filters:
+                - SetPath=/v3/api-docs
 
 jwt:
   secret: "${JWT_SECRET:1234567890123456789012345678901234567890123456789012345678901234}"
@@ -67,6 +125,35 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /v3/api-docs/auth
+      - name: User Service
+        url: /v3/api-docs/user
+      - name: Security Service
+        url: /v3/api-docs/security
+      - name: Catálogo Service
+        url: /v3/api-docs/catalogo
+      - name: Stock Service
+        url: /v3/api-docs/stock
+      - name: Carrito Service
+        url: /v3/api-docs/carrito
+      - name: Pagos Service
+        url: /v3/api-docs/pagos
+      - name: Envios Service
+        url: /v3/api-docs/envios
+      - name: Notificaciones Service
+        url: /v3/api-docs/notificaciones
+      - name: Pedidos Service
+        url: /v3/api-docs/pedidos
 
 logging:
   level:

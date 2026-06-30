@@ -39,7 +39,10 @@ public class JwtAuthFilter implements Filter {
         Map.entry("/api/catalogo/buscar", List.of("GET")),
         Map.entry("/api/catalogo/marcas", List.of("GET")),
         Map.entry("/api/catalogo/categorias", List.of("GET")),
-        Map.entry("/api/catalogo/perfumes", List.of("GET"))
+        Map.entry("/api/catalogo/perfumes", List.of("GET")),
+        Map.entry("/swagger-ui", List.of()),
+        Map.entry("/v3/api-docs", List.of()),
+        Map.entry("/swagger-ui.html", List.of())
     );
 
     private SecretKey key() {
