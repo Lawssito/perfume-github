@@ -9,7 +9,7 @@ Sistema de e-commerce de perfumes basado en una arquitectura de **microservicios
 | Componente | Descripción | Enlace |
 |------------|-------------|--------|
 | 🐳 ZIP Con Docker | JARs + docker-compose + scripts para despliegue con Docker | [Descargar ZIP Con Docker](https://drive.google.com/file/d/1b8X8NVXkq84MkW91DxbUSO8k8pb3QvgS/view?usp=sharing) |
-| 🎥 Video Defensa Técnica | Video explicativo del sistema | [Ver Video](https://drive.google.com/file/d/1piwypMrOSPDqUi5mZ2O2WZPGYXZGlnFb/view?usp=sharing) |
+| 🎥 Video Defensa Técnica | Video explicativo del sistema (10 min) | [Ver Video](https://drive.google.com/file/d/1piwypMrOSPDqUi5mZ2O2WZPGYXZGlnFb/view?usp=sharing) |
 | 📄 Subtítulos del Video | Transcripción del video de defensa | [Guión](https://drive.google.com/file/d/1IRpdBip9o1cYDpLxJq7wj3Ec20qWuKUh/view?usp=sharing) |
 
 ---
@@ -25,8 +25,8 @@ Sistema de e-commerce de perfumes basado en una arquitectura de **microservicios
 - [Swagger](#swagger)
 - [Requisitos](#requisitos)
 - [Ejecución con Docker](#ejecución-con-docker)
-- [Ejecución nativa (sin Docker)](#ejecución-nativa-sin-docker)
 - [Flujo de compra](#flujo-de-compra-carrito--pedido--pago)
+- [Pruebas unitarias](#pruebas-unitarias-junit-5--mockito)
 - [JaCoCo](#jacoco)
 - [Estructura del repositorio](#estructura-del-repositorio)
 
@@ -127,8 +127,8 @@ El sistema está compuesto por **12 microservicios** que cubren todo el ciclo de
 ## Requisitos
 
 - JDK 21
-- Maven 3.9+ (o el wrapper `./mvnw`)
-- MySQL 8.0+ (puerto `3307`) o Docker Desktop
+- Maven 3.9+ (solo para compilar)
+- Docker Desktop
 - Git
 
 ## Ejecución con Docker
@@ -140,7 +140,13 @@ git clone https://github.com/Lawssito/perfume-github.git
 cd perfume-github
 ```
 
-### 2. Iniciar todos los servicios
+### 2. Compilar
+
+```bash
+mvn clean package -DskipTests
+```
+
+### 3. Iniciar todos los servicios
 
 ```bash
 docker compose up -d
@@ -148,64 +154,16 @@ docker compose up -d
 
 Esto levanta **13 contenedores**: MySQL 8.0, Eureka Server, API Gateway y los 10 microservicios.
 
-### 3. Verificar
+### 4. Verificar
 
 - **Eureka Dashboard:** `http://localhost:8761` — todas las instancias `UP`
 - **API Gateway:** `http://localhost:8080`
 
-### 4. Detener
+### 5. Detener
 
 ```bash
 docker compose down
 ```
-
-## Ejecución nativa (sin Docker)
-
-### 1. Clonar
-
-```bash
-git clone https://github.com/Lawssito/perfume-github.git
-cd perfume-github
-```
-
-### 2. Levantar MySQL
-
-Asegúrate de que MySQL esté corriendo en el puerto `3307`:
-
-```bash
-docker run -d --name perfume-mysql -p 3307:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mysql:8.0
-```
-
-O usa tu instalación local de MySQL configurada en `localhost:3307`.
-
-### 3. Compilar
-
-```bash
-mvn clean package -DskipTests
-```
-
-### 4. Orden de arranque
-
-Levanta los servicios en este orden (desde la raíz del proyecto):
-
-```bash
-cd eureka-server && mvn spring-boot:run
-cd api-gateway && mvn spring-boot:run
-cd auth-service && mvn spring-boot:run
-cd user-service && mvn spring-boot:run
-cd security-service && mvn spring-boot:run
-cd ms-catalogo && mvn spring-boot:run
-cd ms-stock && mvn spring-boot:run
-cd ms-carrito && mvn spring-boot:run
-cd ms-pedidos && mvn spring-boot:run
-cd ms-pagos && mvn spring-boot:run
-cd ms-envios && mvn spring-boot:run
-cd ms-notificaciones && mvn spring-boot:run
-```
-
-### 5. Verificar registro en Eureka
-
-Abre `http://localhost:8761` y confirma que aparecen instancias `UP`.
 
 ## API Gateway y rutas
 
@@ -398,12 +356,14 @@ perfume-github/
 
 Cada módulo es un proyecto Maven independiente con su propio `pom.xml` y `src/main/java`.
 
-## JaCoCo
+## Pruebas unitarias (JUnit 5 + Mockito)
 
-JaCoCo está configurado en el `pom.xml` raíz para generar reportes de cobertura de pruebas. Para ejecutar las pruebas y generar el reporte:
+La suite de pruebas unitarias usa **JUnit 5** y **Mockito** para tests de controllers (`MockMvc`) y servicios. Para ejecutarlas:
 
 ```bash
-mvn clean verify
+mvn clean install
 ```
 
-Los reportes se generan en `target/site/jacoco/index.html` de cada módulo (y en la raíz si se configura el aggregator).
+## JaCoCo
+
+JaCoCo está configurado en el `pom.xml` raíz para generar reportes de cobertura. Los reportes se generan en `target/site/jacoco/index.html` de cada módulo.
