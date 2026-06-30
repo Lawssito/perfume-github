@@ -8,9 +8,9 @@ Sistema de e-commerce de perfumes basado en una arquitectura de **microservicios
 
 | Componente | Descripción | Enlace |
 |------------|-------------|--------|
-| 🐳 ZIP Con Docker | JARs + docker-compose + scripts para despliegue con Docker | [Descargar ZIP Con Docker](https://drive.google.com/file/d/1JD6oqPB258U0ktaG-RupblNP_kWrP4df/view?usp=sharing) |
-| 🎥 Video Defensa Técnica | Video explicativo del sistema | [Ver Video](https://drive.google.com/file/d/1v4ezIb4zTLlzQAV6_auqezYC4cGdFrHP/view?usp=drive_link) |
-| 📄 Subtítulos del Video | Transcripción del video de defensa | [subtitulos-video.txt](subtitulos-video.txt) |
+| 🐳 ZIP Con Docker | JARs + docker-compose + scripts para despliegue con Docker | [Descargar ZIP Con Docker](https://drive.google.com/file/d/1b8X8NVXkq84MkW91DxbUSO8k8pb3QvgS/view?usp=sharing) |
+| 🎥 Video Defensa Técnica | Video explicativo del sistema | [Ver Video](https://drive.google.com/file/d/1piwypMrOSPDqUi5mZ2O2WZPGYXZGlnFb/view?usp=sharing) |
+| 📄 Subtítulos del Video | Transcripción del video de defensa | [Guión](https://drive.google.com/file/d/1IRpdBip9o1cYDpLxJq7wj3Ec20qWuKUh/view?usp=sharing) |
 
 ---
 
