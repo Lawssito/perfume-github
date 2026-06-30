@@ -45,7 +45,7 @@ class AuthControllerTest {
     void crearCredencial_DebeRetornar201() throws Exception {
         doNothing().when(authService).crearCredencial(any(CrearCredencialRequestDTO.class));
 
-        mockMvc.perform(post("/api/v1/auth/credenciales")
+        mockMvc.perform(post("/api/auth/credenciales")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"idUsuario\":1,\"email\":\"test@email.com\",\"password\":\"Pass1234\"}"))
                 .andExpect(status().isCreated());
@@ -53,7 +53,7 @@ class AuthControllerTest {
 
     @Test
     void crearCredencial_CuandoDatosInvalidos_DebeRetornar400() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/credenciales")
+        mockMvc.perform(post("/api/auth/credenciales")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"invalido\"}"))
                 .andExpect(status().isBadRequest());
@@ -63,7 +63,7 @@ class AuthControllerTest {
     void listarCredenciales_DebeRetornar200() throws Exception {
         when(authService.listarCredenciales()).thenReturn(List.of(crearCredencialResponse()));
 
-        mockMvc.perform(get("/api/v1/auth/credenciales"))
+        mockMvc.perform(get("/api/auth/credenciales"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].idCredencial").value(1))
                 .andExpect(jsonPath("$[0].email").value("test@email.com"))
@@ -74,7 +74,7 @@ class AuthControllerTest {
     void obtenerPorIdUsuario_CuandoExiste_DebeRetornar200() throws Exception {
         when(authService.obtenerPorIdUsuario(1L)).thenReturn(crearCredencialResponse());
 
-        mockMvc.perform(get("/api/v1/auth/credenciales/usuario/1"))
+        mockMvc.perform(get("/api/auth/credenciales/usuario/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.idCredencial").value(1))
                 .andExpect(jsonPath("$.idUsuario").value(1))
@@ -86,7 +86,7 @@ class AuthControllerTest {
     void obtenerPorIdUsuario_CuandoNoExiste_DebeRetornar404() throws Exception {
         when(authService.obtenerPorIdUsuario(999L)).thenThrow(new IllegalArgumentException("Credencial no encontrada para el usuario"));
 
-        mockMvc.perform(get("/api/v1/auth/credenciales/usuario/999"))
+        mockMvc.perform(get("/api/auth/credenciales/usuario/999"))
                 .andExpect(status().isNotFound());
     }
 
@@ -95,7 +95,7 @@ class AuthControllerTest {
         CredencialResponseDTO actualizada = new CredencialResponseDTO(1L, 1L, "test@email.com", "INACTIVO", LocalDateTime.now());
         when(authService.actualizarEstadoCuenta(eq(1L), any(ActualizarEstadoCuentaDTO.class))).thenReturn(actualizada);
 
-        mockMvc.perform(put("/api/v1/auth/credenciales/usuario/1/estado")
+        mockMvc.perform(put("/api/auth/credenciales/usuario/1/estado")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estadoCuenta\":\"INACTIVO\"}"))
                 .andExpect(status().isOk())
@@ -106,7 +106,7 @@ class AuthControllerTest {
     void eliminarCredencial_DebeRetornar204() throws Exception {
         doNothing().when(authService).eliminarCredencial(1L);
 
-        mockMvc.perform(delete("/api/v1/auth/credenciales/usuario/1"))
+        mockMvc.perform(delete("/api/auth/credenciales/usuario/1"))
                 .andExpect(status().isNoContent());
     }
 
@@ -122,7 +122,7 @@ class AuthControllerTest {
 
         when(authService.autenticarUsuario(any(LoginRequestDTO.class))).thenReturn(authResponse);
 
-        mockMvc.perform(post("/api/v1/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"test@email.com\",\"password\":\"Pass1234\"}"))
                 .andExpect(status().isOk())
@@ -139,7 +139,7 @@ class AuthControllerTest {
         TokenClaimsResponseDTO claims = new TokenClaimsResponseDTO(true, "test@email.com", 1L, List.of("ROLE_USER"), "Token valido");
         when(authService.validarToken(any(ValidateTokenRequestDTO.class))).thenReturn(claims);
 
-        mockMvc.perform(post("/api/v1/auth/validate")
+        mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"token\":\"valid-token\"}"))
                 .andExpect(status().isOk())
@@ -154,7 +154,7 @@ class AuthControllerTest {
         TokenClaimsResponseDTO claims = new TokenClaimsResponseDTO(false, null, null, null, "Token invalido o expirado");
         when(authService.validarToken(any(ValidateTokenRequestDTO.class))).thenReturn(claims);
 
-        mockMvc.perform(post("/api/v1/auth/validate")
+        mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"token\":\"invalid-token\"}"))
                 .andExpect(status().isUnauthorized())
@@ -174,7 +174,7 @@ class AuthControllerTest {
 
         when(authService.refreshToken("valid-refresh-token")).thenReturn(authResponse);
 
-        mockMvc.perform(post("/api/v1/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"valid-refresh-token\"}"))
                 .andExpect(status().isOk())
